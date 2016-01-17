@@ -148,6 +148,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
                 //System.out.println("scroll state: "+newState);
                 super.onScrollStateChanged(recyclerView, newState);
             }
+
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 //System.out.println("scroll dx: " + dx);
                 //System.out.println("scroll dy: " + dy);
@@ -370,6 +371,8 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
         });
 
     }
+
+
 
     /**
      * Feed Item recycler view. Handles UI events related to recycler layout

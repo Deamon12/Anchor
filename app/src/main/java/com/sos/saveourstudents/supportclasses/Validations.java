@@ -6,7 +6,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Created by HTPC on 4/26/2015.
+ * Support class used with login and user creation checks
  */
     public class Validations  {
     private static final int MIN_LENGTH = 3;

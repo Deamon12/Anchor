@@ -13,7 +13,9 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.sos.saveourstudents.MemberWantsToJoinActivity;
 import com.sos.saveourstudents.R;
 
-
+/**
+ * Initiates broadcast of notifications from Google Cloud Messenger pushes
+ */
 public class GcmIntentService extends IntentService {
     private final String ADD_MEMBER = "1", ADD_TUTOR = "2", ACCEPT_USER = "3", DELETE_USER = "4";
     public static final int NOTIFICATION_ID = 1;
