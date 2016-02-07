@@ -282,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-
+    //TODO: too many updates....adjust this. Disabled for now
     public void updateFragments(){
 
         if(((FeedFragment) viewPagerAdapter.getItem(0)).mContext != null)
