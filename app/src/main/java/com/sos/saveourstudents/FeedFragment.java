@@ -86,6 +86,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
             //Restore the fragment's state here
         }
     }
+
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -103,7 +104,8 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
 
 
         mContext = getActivity();
-        if(!Singleton.hasBeenInitialized()){
+
+        if (!Singleton.hasBeenInitialized()) {
             Singleton.initialize(mContext);
         }
 
@@ -174,8 +176,8 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == VIEWQUESTION_ACTIVITY) {
-            ((MainActivity) getActivity()).updateFragments();
-            ((MainActivity) getActivity()).buildFab();
+            //((MainActivity) getActivity()).updateFragments();
+            //((MainActivity) getActivity()).buildFab();
         }
     }
 
@@ -195,17 +197,15 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
         double latitude = 32.88006;
         double longitude = -117.2340133;
 
-        if(mCurrentLocation != null){
+        if (mCurrentLocation != null) {
             latitude = mCurrentLocation.getLatitude();
             longitude = mCurrentLocation.getLongitude();
-        }
-        else if(lastKnownLocation != null){
+        } else if (lastKnownLocation != null) {
             latitude = lastKnownLocation.getLatitude();
             longitude = lastKnownLocation.getLongitude();
-        }
-        else{
+        } else {
             System.out.println("Could not get location, using UCSD as default");
-            Toast.makeText(mContext, "Could not get location" ,Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, "Could not get location", Toast.LENGTH_SHORT).show();
         }
 
 
@@ -219,34 +219,64 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
 
 
         String paramString = URLEncodedUtils.format(params, "utf-8").replace("+", "%20");
-        String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/getQuestions?"+paramString;
+        String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/getQuestions?" + paramString;
+
+        //System.out.println("feed get question URL: "+url);
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET,
                 url,
-                (JSONObject)null,
-                new Response.Listener<JSONObject>()
-                {
+                (JSONObject) null,
+                new Response.Listener<JSONObject>() {
 
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
 
-                           JSONObject theResponse = new JSONObject(response.toString());
+                            JSONObject theResponse = new JSONObject(response.toString());
 
-                            if(!theResponse.getString("success").equalsIgnoreCase("1")){
+
+                            if (!theResponse.getString("success").equalsIgnoreCase("1")) {
                                 showConnectionIssueDialog();
                                 return;
                             }
-                            if(theResponse.getString("expectResults").equalsIgnoreCase("0")){
+
+                            /**
+                             * Correct response from server
+                             */
+                            if (theResponse.getString("expectResults").equalsIgnoreCase("0")) {
                                 //No results to show (empty array returned)
-                                mQuestionList = theResponse.getJSONObject("result").getJSONArray("myArrayList");
-                            }
-                            else{
-                                mQuestionList = theResponse.getJSONObject("result").getJSONArray("myArrayList");
+                                JSONArray tempList = theResponse.getJSONObject("result").getJSONArray("myArrayList");
+                                System.out.println(mQuestionList+" =?= "+tempList);
+
+                                if (mQuestionList != null && tempList.equals(mQuestionList)) {
+                                    //Dont change UI
+                                } else {
+                                    //new data has been recieved...TODO: alert user
+
+                                    mQuestionList = theResponse.getJSONObject("result").getJSONArray("myArrayList");
+                                    showQuestions();
+                                }
+
+                            } else {
+                                /**
+                                 * If successfully recieved message list, check our currently showing list.
+                                 * If the newly recieved list is the same as the currently shown list, dont update UI.
+                                 * Else, TODO: alert user user to update UI
+                                 */
+                                JSONArray tempList = theResponse.getJSONObject("result").getJSONArray("myArrayList");
+                                System.out.println(mQuestionList+" =?= "+tempList);
+                                if (mQuestionList != null && tempList.equals(mQuestionList)) {
+                                    //Dont change UI
+                                } else {
+                                    //new data has been recieved...TODO: alert user
+                                    mQuestionList = theResponse.getJSONObject("result").getJSONArray("myArrayList");
+                                    showQuestions();
+                                }
+
+
                             }
 
-                            mSwipeRefreshLayout.setRefreshing(false);
-                            showQuestions();
+                            //mSwipeRefreshLayout.setRefreshing(false);
 
 
                         } catch (JSONException e) {
@@ -273,6 +303,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
      * Show retrieved question data to UI
      */
     private void showQuestions(){
+
         mSwipeRefreshLayout.setRefreshing(false);
         mAdapter = new RecycleViewAdapter(R.layout.feed_item_layout);
         mRecyclerView.setAdapter(mAdapter);
@@ -303,12 +334,14 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
         showConnectionIssueDialog();
     }
 
-    private void showConnectionIssueDialog(){
+    private void showConnectionIssueDialog() {
         mSwipeRefreshLayout.setRefreshing(false);
         ((MainActivity) getActivity()).showSnackbar();
     }
 
-    public void getLocationUpdate(){
+
+
+    public void getLocationUpdate() {
         mSwipeRefreshLayout.setRefreshing(true);
         createLocationRequest();
 
@@ -321,27 +354,34 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
     }
 
     protected void stopLocationUpdates() {
-        if(mGoogleApiClient.isConnected())
-        LocationServices.FusedLocationApi.removeLocationUpdates(
-                mGoogleApiClient, this);
+        if (mGoogleApiClient.isConnected())
+            LocationServices.FusedLocationApi.removeLocationUpdates(
+                    mGoogleApiClient, this);
     }
 
     protected void createLocationRequest() {
-            mLocationRequest = new LocationRequest();
-            mLocationRequest.setInterval(10000);
-            mLocationRequest.setFastestInterval(5000);
-            mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-            startLocationUpdates();
+
+        //System.out.println("Creating new locationRequest in feed");
+        //if(mLocationRequest == null) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        startLocationUpdates();
+        //}
+
     }
 
 
     protected synchronized void buildGoogleApiClient() {
+
         mSwipeRefreshLayout.setRefreshing(true);
         mGoogleApiClient = new GoogleApiClient.Builder(mContext)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+
         mGoogleApiClient.connect();
     }
 
@@ -352,6 +392,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
      * @param imageView View to show retrieved image
      */
     private void getUserImage(String imageUrl, final ImageView imageView){
+
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
         imageLoader.get(imageUrl, new ImageLoader.ImageListener() {
             @Override
@@ -406,45 +447,58 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
                 double latitude = Double.parseDouble(mQuestionList.getJSONObject(position).getJSONObject("map").getString("latitude"));
                 double longitude = Double.parseDouble(mQuestionList.getJSONObject(position).getJSONObject("map").getString("longitude"));
 
-                if(group){
+                if (group) {
                     viewHolder.groupIcon.setColorFilter(getResources().getColor(R.color.primary));
+                } else {
+                    viewHolder.groupIcon.setColorFilter(getResources().getColor(R.color.hint_text_on_background));
                 }
-                if(tutor){
+
+                if (tutor) {
                     viewHolder.tutorIcon.setColorFilter(getResources().getColor(R.color.primary));
+                } else {
+                    viewHolder.tutorIcon.setColorFilter(getResources().getColor(R.color.hint_text_on_background));
                 }
 
                 String userImageUrl = "";
-                if(mQuestionList.getJSONObject(position).getJSONObject("map").has("image")){
+                if (mQuestionList.getJSONObject(position).getJSONObject("map").has("image")) {
                     userImageUrl = mQuestionList.getJSONObject(position).getJSONObject("map").getString("image");
                 }
 
-                if(!userImageUrl.equalsIgnoreCase("")){
+
+                /**
+                 * Send user image URL to volley if user has a URL
+                 * otherwise, set user imageview to default image
+                 */
+                if (!userImageUrl.equalsIgnoreCase("")) {
                     getUserImage(userImageUrl, viewHolder.userImage);
+                } else {
+                    viewHolder.userImage.setImageDrawable(getResources().getDrawable(R.drawable.defaultprofile));
                 }
 
-                if(firstName.length() > 14) {
+                if (firstName.length() > 14) {
                     firstName = firstName.substring(0, 13).concat("...");
                 }
 
                 viewHolder.nameText.setText(firstName + " " + lastName.charAt(0) + '.');
                 viewHolder.questionText.setText(text);
+
                 viewHolder.dateText.setText(Singleton.getInstance().doDateLogic(theDate));
                 viewHolder.topicText.setText(topic);
 
                 String distanceType = sharedPref.getString("distanceType", "MI");
 
-                if(mCurrentLocation != null){
+
+                if (mCurrentLocation != null) {
+                  
                     viewHolder.distanceText.setText(
                             Singleton.getInstance().doDistanceLogic(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(),
-                                    latitude, longitude, distanceType)+""+distanceType);
-                }
-                else if(lastKnownLocation != null){
+                                    latitude, longitude, distanceType) + "" + distanceType);
+                } else if (lastKnownLocation != null) {
                     System.out.println("mCurrentLocation is null, trying lastknown");
                     viewHolder.distanceText.setText(
                             Singleton.getInstance().doDistanceLogic(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude(),
-                                    latitude, longitude, distanceType) + ""+distanceType);
-                }
-                else{
+                                    latitude, longitude, distanceType) + "" + distanceType);
+                } else {
                     viewHolder.distanceText.setVisibility(View.INVISIBLE);
                     System.out.println("mCurrentLocation and lastknown is null");
                 }
@@ -493,7 +547,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                if(v == cardView && event.getAction() == MotionEvent.ACTION_UP){
+                if (v == cardView && event.getAction() == MotionEvent.ACTION_UP) {
 
                     try {
                         String questionId = mQuestionList.getJSONObject(getAdapterPosition()).getJSONObject("map").getString("question_id");
@@ -511,7 +565,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
             @Override
             public void onClick(View v) {
 
-                if(v == nameText || v == userImage){
+                if (v == nameText || v == userImage) {
 
                     try {
                         String userId = mQuestionList.getJSONObject(getAdapterPosition()).getJSONObject("map").getString("user_id");
