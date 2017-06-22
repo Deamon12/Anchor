@@ -28,7 +28,6 @@ import com.rey.material.widget.FloatingActionButton;
 public class ViewProfileFragment extends Fragment {
     private static final String ARG_PARAM1 = "student";
     private static final String ARG_ISCURRENTUSER = "isCurrentUser";
-    private FloatingActionButton mEditButton;
 
     private Student mCurrStudent;
     private boolean mIsCurrentUser;
@@ -53,10 +52,17 @@ public class ViewProfileFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Empty constructor
+     */
     public ViewProfileFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Grab the bundle saved with the newInstance() call
+     * @param savedInstanceState The bundle of information regarding the student
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +75,13 @@ public class ViewProfileFragment extends Fragment {
         }
     }
 
+    /**
+     * On View creation, begin setting up the profile image and cover image
+     * @param inflater The LayoutInflater of the activity
+     * @param container The container of all ViewGroups in the activity
+     * @param savedInstanceState The savedInstanceState of the app on creation
+     * @return
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -79,6 +92,10 @@ public class ViewProfileFragment extends Fragment {
         return rootView;
     }
 
+    /**
+     * When the activity is created, begin updating the contents of the profile view
+     * @param savedInstanceState The saved instance state of the activity
+     */
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -91,7 +108,7 @@ public class ViewProfileFragment extends Fragment {
         aboutMeContents.setDividerDrawable(getActivity().getResources()
                 .getDrawable(R.drawable.abc_list_divider_mtrl_alpha));
         aboutMeContents.setShowDividers(LinearLayout.SHOW_DIVIDER_BEGINNING);
-        mEditButton = (FloatingActionButton) getActivity().findViewById(R.id.profile_editButton);
+        FloatingActionButton mEditButton = (FloatingActionButton) getActivity().findViewById(R.id.profile_editButton);
         if (!mIsCurrentUser) {
             mEditButton.setVisibility(View.INVISIBLE);
             mEditButton.setClickable(false);
@@ -110,17 +127,9 @@ public class ViewProfileFragment extends Fragment {
 
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-
-
-    }
-
     /**
      * Update the View with the student's current values
      */
-
     private void updateCurrentStudentView() {
         ((TextView) getActivity().findViewById(R.id.profile_firstName))
                 .setText(mCurrStudent.getFirstName());
@@ -135,29 +144,29 @@ public class ViewProfileFragment extends Fragment {
         ((TextView) getActivity().findViewById(R.id.profile_myDescription))
                 .setText(mCurrStudent.getDescription());
 
-
-
-
-            //TODO
-        if (mCurrStudent.getProfilePictureUrl().equals(null) ||
+        if (mCurrStudent.getProfilePictureUrl() == null ||
                 mCurrStudent.getProfilePictureUrl().isEmpty()) {
             mProfileImage.setImageResource(R.drawable.defaultprofile);
             mCurrStudent.setProfilePicture(mProfileImage);
         } else {
             getUserImage(mCurrStudent.getProfilePictureUrl(), mProfileImage);
-            //new DownloadImageTask(mProfileImage).execute(mCurrStudent.getProfilePictureUrl());
-            //mCurrStudent.setProfilePicture(mProfileImage);
         }
     }
 
+    /**
+     * Updates the current cover image of the student based on Settings
+     */
     private void updateCoverImage(){
         if(mIsCurrentUser)
             mCoverImageView.setImageResource(getActivity().getSharedPreferences(
                     getString(R.string.preference_file_key), Context.MODE_PRIVATE)
                     .getInt("cover_photo", R.drawable.materialwallpaperdefault));
-
     }
 
+    /**
+     * Asserts that ViewProfileActivity has attached the listener for the FAB
+     * @param activity ViewProfileActivity
+     */
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -169,6 +178,9 @@ public class ViewProfileFragment extends Fragment {
         }
     }
 
+    /**
+     * On detach, remove the listener
+     */
     @Override
     public void onDetach() {
         super.onDetach();
@@ -180,18 +192,16 @@ public class ViewProfileFragment extends Fragment {
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnEditButtonListener {
         void onEditButton();
     }
 
-
-
-
+    /**
+     * Grabs the current profile's image from the Singleton's ImageLoader
+     * @param imageUrl The URL of the image
+     * @param imageView The ImageView to retrieve the image from
+     */
     private void getUserImage(String imageUrl, final ImageView imageView){
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
@@ -216,43 +226,4 @@ public class ViewProfileFragment extends Fragment {
         });
 
     }
-
-
-
-
-
-
-    /*
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                mIcon11 = null;
-                Log.e("Profile Activity", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            if (result != null) bmImage.setImageBitmap(result);
-            else {
-                bmImage.setImageResource(R.drawable.defaultprofile);
-            }
-        }
-    }*/
-
-
-
-
 }

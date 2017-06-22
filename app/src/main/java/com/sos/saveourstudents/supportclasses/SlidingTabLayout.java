@@ -1,8 +1,6 @@
 package com.sos.saveourstudents.supportclasses;
 
-/**
- * Created by deamon on 4/21/15.
- */
+
 import android.content.Context;
 import android.graphics.Typeface;
 import android.support.v4.view.PagerAdapter;

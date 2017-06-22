@@ -1,6 +1,5 @@
 package com.sos.saveourstudents;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -36,23 +35,27 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-
+/**
+ * Fragment for the third pane of ViewQuestionActivity
+ * Displays all students and tutors in the group in a ListView
+ */
 public class ViewQuestionMembersFragment extends Fragment {
 
 
+    // Keep track of all students and tutors for ArrayAdapters
     ArrayList<JSONObject> mTutorList = null;
     ArrayList<JSONObject> mStudentList = null;
-    private ArrayList<JSONObject> mRatedList;
-    private HashMap<String, JSONObject> mRatedHashMap;
-
-
-    private String mViewerUserId;
-
     private ListView mStudentsListView;
     private ListView mTutorsListView;
     private StudentsArrayAdapter mStudentsListViewArrayAdapter;
     private TutorsArrayAdapter mTutorsListViewArrayAdapter;
 
+    // Used for the already-rated tutors
+    private ArrayList<JSONObject> mRatedList;
+    private HashMap<String, JSONObject> mRatedHashMap;
+
+    // The current viewer's user id
+    private String mViewerUserId;
     private SharedPreferences sharedPref;
 
     private String mQuestionId;
@@ -63,7 +66,14 @@ public class ViewQuestionMembersFragment extends Fragment {
     private static final String mGetRateListUrl =
             "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/getRateList?userId=";
 
-
+    /**
+     * Instantiates a new instances of this fragment
+     *
+     * @param questionId The current question's questionId
+     * @param editable   Whether the question belongs to the current viewer
+     * @param isMember   Whether the current viewer is a member of the group
+     * @return An instance of this fragment
+     */
     public static ViewQuestionMembersFragment newInstance(String questionId, boolean editable, boolean isMember) {
 
         ViewQuestionMembersFragment fragment = new ViewQuestionMembersFragment();
@@ -75,20 +85,32 @@ public class ViewQuestionMembersFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Empty constructor
+     */
     public ViewQuestionMembersFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Retrieves the userId of the viewer through shared preferences
+     * @param savedInstanceState Unused for this fragment
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mViewerUserId = getActivity()
                 .getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
                 .getString("user_id", "");
-
-
     }
 
+    /**
+     * Sets up member variables once views have been inflated
+     * @param inflater The LayoutInflater of the current activity
+     * @param container The ViewGroup that will contain both ListViews
+     * @param savedInstanceState Unused
+     * @return The root view of the fragment
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -119,6 +141,9 @@ public class ViewQuestionMembersFragment extends Fragment {
         return rootView;
     }
 
+    /**
+     * Populates the arrays of Students and Tutors from the server
+     */
     private void getMemberData() {
 
         //final String currentUserId = sharedPref.getString("user_id", "");
@@ -129,30 +154,20 @@ public class ViewQuestionMembersFragment extends Fragment {
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/viewMembers?" + paramString;
 
-
-        //System.out.println("view member url: " + url);
-
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null,
                 new Response.Listener<JSONObject>() {
 
                     @Override
                     public void onResponse(JSONObject response) {
-
-
                         try {
-
                             JSONObject result = new JSONObject(response.toString());
-                            //System.out.println("Members result "+result);
                             if (result.getString("success").equalsIgnoreCase("1")) {
                                 mStudentList = null;
                                 mTutorList = null;
 
-
                                 JSONArray memberList = result.getJSONObject("result").getJSONArray("myArrayList");
                                 for (int a = 0; a < memberList.length(); a++) {
-
-                                    System.out.println("adding: " + memberList.getJSONObject(a).getJSONObject("map"));
                                     JSONObject currStudent = memberList.getJSONObject(a).getJSONObject("map");
                                     if (memberList.getJSONObject(a).getJSONObject("map").getBoolean("tutor")) {
                                         if (mTutorList == null) {
@@ -165,9 +180,7 @@ public class ViewQuestionMembersFragment extends Fragment {
                                         }
                                         mStudentList.add(memberList.getJSONObject(a).getJSONObject("map"));
                                     }
-
                                 }
-
 
                                 if (mTutorList != null && mTutorList.size() > 0) {
                                     mTutorsListViewArrayAdapter = new TutorsArrayAdapter(mContext, mTutorList);
@@ -178,51 +191,29 @@ public class ViewQuestionMembersFragment extends Fragment {
                                     mStudentsListViewArrayAdapter = new StudentsArrayAdapter(mContext, mStudentList);
                                     mStudentsListView.setAdapter(mStudentsListViewArrayAdapter);
                                 }
-
-
-                            } else {
-                                //Error...
                             }
-
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-
                     }
                 }, new Response.ErrorListener() {
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
-                if( ((ViewQuestionActivity) getActivity()) != null)
-                ((ViewQuestionActivity) getActivity()).mSnackBar.show();
+                if (getActivity() != null)
+                    ((ViewQuestionActivity) getActivity()).mSnackBar.show();
             }
 
         });
 
-
+        // Add the request to the queue
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
 
     }
 
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-    }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-    }
-
-
+    /**
+     * The array adapter for the Students ListView
+     */
     private class StudentsArrayAdapter extends ArrayAdapter<JSONObject> {
         private List<JSONObject> data;
 
@@ -255,6 +246,7 @@ public class ViewQuestionMembersFragment extends Fragment {
 
                 final String userId = currStudentMember.getString("user_id");
 
+                // If group leader, add functionality to remove a member from the group
                 if (!userId.equalsIgnoreCase(sharedPref.getString("user_id", "")) && mEditable) {
                     convertView.setOnLongClickListener(new View.OnLongClickListener() {
                         @Override
@@ -270,7 +262,7 @@ public class ViewQuestionMembersFragment extends Fragment {
                 e.printStackTrace();
             }
 
-
+            // Clicking on a member will take you to their profile
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -282,7 +274,6 @@ public class ViewQuestionMembersFragment extends Fragment {
                     }
                 }
             });
-
 
             return convertView;
         }
@@ -346,6 +337,8 @@ public class ViewQuestionMembersFragment extends Fragment {
                 ImageView mThumbsUpButton = ((ImageView) convertView.findViewById(R.id.view_group_members_thumbs_up));
                 ImageView mThumbsDownButton = ((ImageView) convertView.findViewById(R.id.view_group_members_thumbs_down));
 
+                // You must be a member of the group to see tutors
+                // You cannot rate yourself
                 if (mIsMemberOfGroup && !userId.equals(mViewerUserId)) {
                     mThumbsUpButton.setVisibility(View.VISIBLE);
                     mThumbsDownButton.setVisibility(View.VISIBLE);
@@ -364,7 +357,7 @@ public class ViewQuestionMembersFragment extends Fragment {
                 e.printStackTrace();
             }
 
-
+            // Clicking on a tutor takes you to their profile
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -381,7 +374,14 @@ public class ViewQuestionMembersFragment extends Fragment {
             return convertView;
         }
 
-
+        /**
+         * Sets up the thumbs up button drawable for functionality
+         *
+         * @param mThumbsUpButton   The ImageView for the thumbs up button
+         * @param mThumbsDownButton The ImageView for the thumbs down button
+         * @param userId            The userId of the tutor being rated
+         * @param userJson          The JSONObject of the tutor being rated
+         */
         private void setUpThumbsUpButton(final ImageView mThumbsUpButton,
                                          final ImageView mThumbsDownButton, final String userId,
                                          final JSONObject userJson) {
@@ -435,6 +435,14 @@ public class ViewQuestionMembersFragment extends Fragment {
             });
         }
 
+        /**
+         * Sets up thumbs down button drawable functionality
+         *
+         * @param mThumbsUpButton   The thumbs up button of the tutor being rated
+         * @param mThumbsDownButton The thumbs down button of the tutor being rated
+         * @param userId            The userId of the tutor being rated
+         * @param userJson          The JSONObject of the tutor being rated
+         */
         private void setUpThumbsDownButton(final ImageView mThumbsUpButton,
                                            final ImageView mThumbsDownButton, final String userId,
                                            final JSONObject userJson) {
@@ -489,6 +497,12 @@ public class ViewQuestionMembersFragment extends Fragment {
 
     }
 
+    /**
+     * Grabs the current user's image for displaying in the ListView
+     *
+     * @param imageUrl  The URL of the image
+     * @param imageView The ImageVIew to be populated
+     */
     private void getUserImage(String imageUrl, final ImageView imageView) {
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
@@ -509,7 +523,11 @@ public class ViewQuestionMembersFragment extends Fragment {
 
     }
 
-
+    /**
+     * Builds the dialog for removing a user from the group
+     *
+     * @param userId The userId of the member to be removed
+     */
     private void showRemoveUserDialog(final String userId) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
@@ -558,7 +576,10 @@ public class ViewQuestionMembersFragment extends Fragment {
 
     }
 
-
+    /**
+     * Request to the server to remove the user from the group
+     * @param userId The userId of the user to be removed
+     */
     private void removeUser(String userId) {
 
         List<NameValuePair> params = new LinkedList<NameValuePair>();
@@ -567,47 +588,43 @@ public class ViewQuestionMembersFragment extends Fragment {
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/removeUser?" + paramString;
 
-
-        System.out.println("removeUser url: " + url);
-
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null,
                 new Response.Listener<JSONObject>() {
-
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("removeUser result " + result);
                             if (result.getString("success").equalsIgnoreCase("1")) {
-                                Toast.makeText(mContext, "User removed", Toast.LENGTH_SHORT);
+                                Toast.makeText(mContext, "User removed", Toast.LENGTH_SHORT).show();
                                 getMemberData();
                             } else {
-                                Toast.makeText(mContext, "Error removing user", Toast.LENGTH_SHORT);
+                                Toast.makeText(mContext, "Error removing user", Toast.LENGTH_SHORT)
+                                        .show();
                             }
-
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-
                     }
                 }, new Response.ErrorListener() {
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
-                if( ((ViewQuestionActivity) getActivity()) != null)
+                if (getActivity() != null)
                     ((ViewQuestionActivity) getActivity()).mSnackBar.show();
             }
 
         });
-
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
-
     }
 
-
+    /**
+     * Request to database for rating the tutor
+     * @param userId The userId of the student doing the rating
+     * @param ratedUserId The userId of the tutor being rated
+     * @param like Whether the end result was a like, dislike, or undis/like
+     * @param userJson The JSONObject of the tutor
+     */
     private void rateTutor(final String userId, final String ratedUserId, Integer like, final JSONObject userJson) {
 
         List<NameValuePair> params = new LinkedList<NameValuePair>();
@@ -623,8 +640,6 @@ public class ViewQuestionMembersFragment extends Fragment {
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/rateTutor?" + paramString;
 
-        System.out.println("rateTutor url: " + url);
-
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null,
                 new Response.Listener<JSONObject>() {
@@ -634,7 +649,6 @@ public class ViewQuestionMembersFragment extends Fragment {
                         try {
 
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("rateTutor result " + result);
                             if (result.getString("success").equalsIgnoreCase("1")) {
                                 if (!mRatedHashMap.containsKey(ratedUserId)) {
                                     mRatedHashMap.put(ratedUserId, userJson);
@@ -655,8 +669,7 @@ public class ViewQuestionMembersFragment extends Fragment {
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
-                if( ((ViewQuestionActivity) getActivity()) != null)
+                if (getActivity() != null)
                     ((ViewQuestionActivity) getActivity()).mSnackBar.show();
             }
 
@@ -666,6 +679,9 @@ public class ViewQuestionMembersFragment extends Fragment {
 
     }
 
+    /**
+     * Populates the lists related to grabbing the current rated data for the viewer
+     */
     protected void retrieveListOfRatedTutors() {
         String getRateList = mGetRateListUrl + mViewerUserId;
         JsonObjectRequest rateListRequest = new JsonObjectRequest(Request.Method.GET,
@@ -674,7 +690,6 @@ public class ViewQuestionMembersFragment extends Fragment {
             public void onResponse(JSONObject response) {
                 try {
                     JSONObject result = new JSONObject(response.toString());
-                    System.out.println(result);
                     if (result.getInt("expectResults") > 0) {
                         JSONArray arrayOfRatedTutors = result.getJSONObject("result")
                                 .getJSONArray("myArrayList");
@@ -702,53 +717,5 @@ public class ViewQuestionMembersFragment extends Fragment {
                 });
         Singleton.getInstance().addToRequestQueue(rateListRequest);
     }
-
-
-    /*
-    private void getGroupActiveStatus() {
-
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
-        params.add(new BasicNameValuePair("userId", sharedPref.getString("user_id", "")));
-
-        String paramString = URLEncodedUtils.format(params, "utf-8");
-        String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/inGroup?" + paramString;
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
-                (JSONObject) null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONObject result = new JSONObject(response.toString());
-
-                            if (result.getString("success").equalsIgnoreCase("1") && result.getString("expectResults").equalsIgnoreCase("1")) {
-                                String questionId = result.getJSONObject("result").getJSONArray("myArrayList").getJSONObject(0).getJSONObject("map").getString("question_id");
-                                if (questionId.equalsIgnoreCase(mQuestionId)) {
-                                    mIsMemberOfGroup = true;
-                                }
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-                        retrieveListOfRatedTutors();
-                    }
-                }, new Response.ErrorListener()
-
-        {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
-                if( ((ViewQuestionActivity) getActivity()) != null)
-                    ((ViewQuestionActivity) getActivity()).mSnackBar.show();
-            }
-
-        }
-
-        );
-        Singleton.getInstance().addToRequestQueue(jsObjRequest);
-    }
-    */
-
 
 }

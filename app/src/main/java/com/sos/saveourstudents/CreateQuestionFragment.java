@@ -40,9 +40,10 @@ import java.util.List;
 import java.util.Set;
 
 
-
-public class CreateQuestionFragment extends Fragment implements View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener,
-        Response.Listener, Response.ErrorListener{
+/**
+ * This Fragment has 2 modes; Create question and Edit question and this distinction is distinguished after getQuestionData call
+ */
+public class CreateQuestionFragment extends Fragment implements View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener{
 
     private String mQuestionId;
     private ArrayList<String> tagList;
@@ -68,6 +69,11 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
     private String mCurrentUserId;
 
 
+    /**
+     * Static instantiation with questionId param
+     * @param questionId String
+     * @return CreateQuestionFragment
+     */
     public static CreateQuestionFragment newInstance(String questionId) {
         CreateQuestionFragment fragment = new CreateQuestionFragment();
         Bundle args = new Bundle();
@@ -76,6 +82,7 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
         return fragment;
     }
 
+    //Empty constructor
     public CreateQuestionFragment() {
     }
 
@@ -123,7 +130,7 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
 
         buildGoogleApiClient();
 
-        tagList = new ArrayList<String>();
+        tagList = new ArrayList<>();
 
         String name = sharedPref.getString("first_name", "") + " " + sharedPref.getString("last_name", "");
         userName.setText(name);
@@ -138,13 +145,13 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
 
         }
 
-
         return rootView;
-
-
     }
 
 
+    /**
+     * Toggle helper method
+     */
     private void clickGroupButton(){
         if(!groupToggle.isSelected()) {
             groupToggle.setColorFilter(getResources().getColor(R.color.primary_dark));
@@ -157,6 +164,9 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
         groupToggle.setSelected(!groupToggle.isSelected());
     }
 
+    /**
+     * Toggle helper method
+     */
     private void clickTutorButton(){
         if(!tutorToggle.isSelected()) {
             tutorToggle.setColorFilter(getResources().getColor(R.color.primary_dark));
@@ -170,22 +180,11 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
 
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-    }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-
+    /**
+     * Implemented Listener for all view onclick functionalities
+     * @param v view
+     */
     @Override
     public void onClick(View v) {
 
@@ -226,7 +225,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                 checkIfUserIsInGroup();
             }
 
-
         }
         else if(v == addTagsButton){
 
@@ -252,23 +250,20 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
         else if(v == tutorToggle || v == requestTutorText){
             clickTutorButton();
 
-
         }
     }
 
 
+    /**
+     * Volley call to retrieve question info if this fragment is in edit mode
+     */
     private void getQuestionData() {
 
-
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
+        List<NameValuePair> params = new LinkedList<>();
         params.add(new BasicNameValuePair("questionId", mQuestionId));
 
         String paramString = URLEncodedUtils.format(params, "utf-8");
-
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/viewQuestion?"+paramString;
-
-
-        //System.out.println("url: " + url);
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject)null,
@@ -279,9 +274,7 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                         try {
 
                             JSONObject result = new JSONObject(response.toString());
-                            //System.out.println("edit questions result "+result);
                             if(result.getString("success").equalsIgnoreCase("1")){
-
 
                                 JSONArray questionAndTags = result.getJSONObject("result").getJSONArray("myArrayList");
 
@@ -294,7 +287,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                                 }
 
                                 showQuestionDetails();
-
                             }
                             else{
                                 //Error...
@@ -303,7 +295,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-
                     }
                 }, new Response.ErrorListener() {
 
@@ -318,7 +309,9 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
     }
 
 
-
+    /**
+     * Volley call to create question and send it to server
+     */
     private void sendQuestionToServer(){
 
         double latitude = 0.0;
@@ -326,19 +319,16 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
 
         if (mCurrentLocation == null) {
             if (getLastKnownLocation() != null) {
-                //System.out.println("Using last known location, which is not current. So its probably wrong.");
                 mCurrentLocation = getLastKnownLocation();
                 latitude = mCurrentLocation.getLatitude();
                 longitude = mCurrentLocation.getLongitude();
             } else {
                 if (showLocation && !isInEditMode) {
-                    //System.out.println("Error getting current or last known location. Unable to send this post");
                     Toast.makeText(mContext, "Unable to send this post", Toast.LENGTH_SHORT).show();
                     return;
                 } else {
 
                 }
-
             }
         }
         else{
@@ -346,12 +336,9 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
             longitude = mCurrentLocation.getLongitude();
         }
 
-
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
-
+        List<NameValuePair> params = new LinkedList<>();
 
         if(!isInEditMode){
-
             params.add(new BasicNameValuePair("userId", sharedPref.getString("user_id", "")));
             params.add(new BasicNameValuePair("latitude", latitude+""));
             params.add(new BasicNameValuePair("longitude", longitude + ""));
@@ -369,7 +356,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
         params.add(new BasicNameValuePair("topic", topicEditText.getText().toString()));
         params.add(new BasicNameValuePair("visibleLocation", (showLocation ? 1 : 0)+""));
 
-
         String paramString = URLEncodedUtils.format(params, "utf-8")
                 .replaceAll("%27", "%27%27");
 
@@ -378,10 +364,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
             url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/editQuestion?"+paramString;
         else
             url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/createQuestion?"+paramString;
-
-
-        System.out.println("create/edit url: " + url);
-
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject)null,
@@ -392,7 +374,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                         try {
 
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("result "+result);
                             if(!result.getString("success").equalsIgnoreCase("1")){
 
                                 //Error...
@@ -404,12 +385,9 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                                         Toast.makeText(mContext, "Error editing question", Toast.LENGTH_SHORT).show();
                                     else
                                         Toast.makeText(mContext, "Error creating question", Toast.LENGTH_SHORT).show();
-
                                 }
-
                             }
                             else{
-
                                 getActivity().setResult(getActivity().RESULT_OK);
                                 getActivity().finish();
                             }
@@ -417,23 +395,17 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-
                     }
                 }, new Response.ErrorListener() {
 
             @Override
-            public void onErrorResponse(VolleyError error) {
-
-            }
+            public void onErrorResponse(VolleyError error) { }
 
         });
-
 
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
 
     }
-
-
 
     protected void startLocationUpdates() {
         LocationServices.FusedLocationApi.requestLocationUpdates(
@@ -447,17 +419,21 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
-
+    /**
+     * Necessary for location updates
+     */
     protected synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(mContext)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener( this)
                 .addApi(LocationServices.API)
                 .build();
-
         mGoogleApiClient.connect();
     }
 
+    /**
+     * Implemented Method for GoogleApiClient Callbacks
+     */
     @Override
     public void onConnected(Bundle bundle) {
         mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
@@ -467,16 +443,25 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
         startLocationUpdates();
     }
 
+    /**
+     * Implemented Method for GoogleApiClient Callbacks
+     */
     @Override
     public void onConnectionSuspended(int i) {
 
     }
 
+    /**
+     * Implemented Method for GoogleApiClient Callbacks
+     */
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
     }
 
+    /**
+     * Implemented Method for LocationListener Callbacks
+     */
     @Override
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
@@ -490,25 +475,17 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
                 mGoogleApiClient, this);
     }
 
-    @Override
-    public void onErrorResponse(VolleyError error) {
-
-    }
-
-    @Override
-    public void onResponse(Object response) {
-
-    }
-
-
+    /**
+     * LRU query
+     * @param imageUrl String url
+     * @param imageView View to show retrieved image
+     */
     private void getUserImage(String imageUrl, final ImageView imageView){
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
-
         imageLoader.get(imageUrl, new ImageLoader.ImageListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                //Log.e(TAG, "Image Load Error: " + error.getMessage());
             }
 
             @Override
@@ -527,10 +504,8 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
 
 
     private Location getLastKnownLocation() {
-
         LocationManager locationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
-
         Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
         if (location != null) {
             return location;
@@ -540,9 +515,11 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
     }
 
 
-
+    /**
+     * Passes taglist data structure between TagDialog and CreateFragment
+     * @param activeFilters Set<String>
+     */
     public void passTagList(Set<String> activeFilters) {
-        System.out.println("activeFilters: " + activeFilters.toString());
         if(activeFilters.size() > 0 ){
             tagList.clear();
             tagList.addAll(activeFilters);
@@ -556,13 +533,13 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
     }
 
 
+    /**
+     * Update UI after retrieving Question Data
+     */
     private void showQuestionDetails(){
 
 
-        System.out.println("ShowQuestionDetails: " +mQuestionInfo);
-
         try {
-
             boolean studyBool = mQuestionInfo.getBoolean("study_group");
             boolean tutorBool = mQuestionInfo.getBoolean("tutor");
 
@@ -572,15 +549,12 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
             if(studyBool)
                 clickGroupButton();
 
-
             questionEditText.setText(mQuestionInfo.getString("text"));
             topicEditText.setText(mQuestionInfo.getString("topic"));
-
 
             if(tagList.size() > 0){
                 addTagsButton.setColorFilter(getResources().getColor(R.color.primary_dark));
             }
-
 
             int isVisible = mQuestionInfo.getInt("visible_location");
             if(isVisible == 0)
@@ -588,15 +562,15 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
             else
                 locationToggle.setImageResource(R.drawable.ic_location_on_grey600_36dp);
 
-
-
-
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
     }
 
+    /**
+     * Disables being able to create questions if user is already in a group
+     */
     private void checkIfUserIsInGroup() {
         String isJoinerInGroup = mInGroupUrl + mCurrentUserId;
         JsonObjectRequest inGroupRequest = new JsonObjectRequest(Request.Method.GET, isJoinerInGroup,
@@ -605,7 +579,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
             public void onResponse(JSONObject response) {
                 try {
                     JSONObject result = new JSONObject(response.toString());
-                    System.out.println("group check: "+result);
                     if(result.getInt("expectResults") != 0 && !isInEditMode) {
                         Toast.makeText(getActivity(), "You are already in a group!", Toast.LENGTH_LONG)
                                 .show();
@@ -626,4 +599,6 @@ public class CreateQuestionFragment extends Fragment implements View.OnClickList
         });
         Singleton.getInstance().addToRequestQueue(inGroupRequest);
     }
+
+
 }

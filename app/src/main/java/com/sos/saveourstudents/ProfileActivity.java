@@ -20,6 +20,9 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * Activity that maintains EditProfile and ViewProfile Fragments
+ */
 public class ProfileActivity extends AppCompatActivity
         implements ViewProfileFragment.OnEditButtonListener,
         EditProfileFragment.OnDoneButtonListener {

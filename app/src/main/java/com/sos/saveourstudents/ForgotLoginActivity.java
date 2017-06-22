@@ -11,6 +11,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.rey.material.widget.EditText;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -22,12 +23,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Created by HTPC on 4/26/2015.
+ * Activity that handles password recovery. Single volley call that resets user password and sends a randomized
+ * string to their given email address. The password can later be changed after they login.
  */
 public class ForgotLoginActivity extends Activity implements View.OnClickListener {
 
     Button sendEmailBtn;
-    com.rey.material.widget.EditText emailentry;
+    EditText emailentry;
 
 
     @Override
@@ -40,11 +42,15 @@ public class ForgotLoginActivity extends Activity implements View.OnClickListene
         }
 
         sendEmailBtn = (Button)findViewById(R.id.send_credentials_to_email_btn);
-        emailentry = (com.rey.material.widget.EditText) findViewById(R.id.forgot_login_email_textfield);
+        emailentry = (EditText) findViewById(R.id.forgot_login_email_textfield);
         sendEmailBtn.setOnClickListener(this);
 
     }
 
+    /**
+     * Implemented View event listener
+     * @param v
+     */
     @Override
     public void onClick(View v) {
         if(v == sendEmailBtn) {
@@ -54,41 +60,35 @@ public class ForgotLoginActivity extends Activity implements View.OnClickListene
             }else{
 
                 emailentry.clearError();
-                doRetrieveInfo(emailentry.getText().toString());
+                sendRecoveryEmail(emailentry.getText().toString());
             }
-
         }
     }
 
-    private void doRetrieveInfo(final String email)
-    {
-        //find the valid url
-        //http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/getQuestions
-        String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/forgotPassword?";
 
+    /**
+     * Notify server to send random recovery password to given email address.
+     * @param email email address to send recovery password to
+     */
+    private void sendRecoveryEmail(final String email){
 
         List<NameValuePair> params = new LinkedList<NameValuePair>();
         params.add(new BasicNameValuePair("email", email));
+
         String paramString = URLEncodedUtils.format(params, "utf-8");
+        String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/forgotPassword?" + paramString;
 
-        url = url + paramString;
-
-        System.out.println("Url: "+url);
         final JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 try {
-                    System.out.println(response.toString());
                     if(response.getString("expectResults").equalsIgnoreCase("0")) {
                         Toast.makeText(ForgotLoginActivity.this, R.string.invalidEmail, Toast.LENGTH_SHORT).show();
                     } else if (response.getString("expectResults").equalsIgnoreCase("1")) {
                         //email exists
                         Toast.makeText(ForgotLoginActivity.this, R.string.emailSent, Toast.LENGTH_SHORT).show();
-                        //Intent loginActivity = new Intent(ForgotLoginActivity.this, LoginActivity.class);
-                        //startActivity(loginActivity);
                         finish();
-
                         return;
                     }
 
@@ -108,7 +108,6 @@ public class ForgotLoginActivity extends Activity implements View.OnClickListene
         });
 
         Singleton.getInstance().addToRequestQueue(jsonObjReq);
-
     }
 
 }

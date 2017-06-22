@@ -12,6 +12,9 @@ import com.sos.saveourstudents.R;
 
 import java.util.ArrayList;
 
+/**
+ * Custom Flowlayout that handles dynamic resizing and adjusting of views within a scrollable linear layout
+ */
 public class FlowLayout extends ViewGroup {
     public static final int LEFT_TO_RIGHT = 0;
     public static final int TOP_DOWN = 1;

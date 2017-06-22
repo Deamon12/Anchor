@@ -15,14 +15,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.rey.material.app.Dialog;
-import com.rey.material.app.DialogFragment;
-import com.rey.material.app.SimpleDialog;
 import com.rey.material.widget.EditText;
 import com.rey.material.widget.Slider;
 import com.rey.material.widget.Spinner;
@@ -37,25 +33,24 @@ import org.json.JSONObject;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by Xian on 5/19/2015.
- */
 public class SettingsActivity extends AppCompatActivity implements View.OnClickListener {
-
 
     private EditText passwordEditText;
     private EditText passwordConfirmEditText;
-    Toolbar toolbar;
-    SharedPreferences sharedPref;
-    int currdistance;
+    private Toolbar toolbar;
+    private SharedPreferences sharedPref;
+    private int currdistance;
 
-    Slider distanceSlider;
-    Button emailButton;
-    Button passwordButton;
-    Spinner coverSpinner;
+    private Slider distanceSlider;
+    private Button emailButton;
+    private Button passwordButton;
+    private Spinner coverSpinner;
+    private TextView currDistanceDisplay;
 
-    TextView currDistanceDisplay;
-
+    /**
+     * Begin setting up ViewGroups' member variables and activity toolbar
+     * @param savedInstanceState The bundle passed on creation, unused
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,7 +87,7 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
             items[i] = "Cover " + String.valueOf(i + 1);
 
 
-        ArrayAdapter<String> adapter = new CustomSpinnerAdapter(this, R.layout.spinner_cover_item, items);
+        ArrayAdapter<String> adapter = new CustomSpinnerAdapter(this, items);
 
         coverSpinner.setAdapter(adapter);
         coverSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
@@ -101,7 +96,7 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
             public void onItemSelected(Spinner spinner, View view, int position, long l) {
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putInt("cover_photo", getResources().obtainTypedArray(R.array.cover_imgs).getResourceId(position, R.drawable.materialwallpaperdefault));
-                editor.commit();
+                editor.apply();
                 System.out.println("Cover photo set to: " + getResources().obtainTypedArray(R.array.cover_imgs).getResourceId(position, R.drawable.materialwallpaperdefault));
             }
 
@@ -111,7 +106,6 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
 
 
         currdistance = sharedPref.getInt("distance", 1);
-
         currDistanceDisplay.setText(currdistance + "");
         distanceSlider.setPosition(currdistance, true);
         distanceSlider.setValue(currdistance, true);
@@ -134,16 +128,19 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
             passwordButton.setVisibility(View.INVISIBLE);
         }
 
-
-
-
     }
 
-
+    /**
+     * Sets up OnClickListeners for the specified ViewGroups
+     * @param v The view group in question
+     */
     @Override
     public void onClick(View v) {
 
         if (v == emailButton) {
+
+            //TODO STUPID LIBRARY
+            /*
             new MaterialDialog.Builder(this)
                     .title("Change Email")
                     .input("Email", sharedPref.getString("email", ""), new MaterialDialog.InputCallback() {
@@ -159,17 +156,20 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                     })
                     .negativeText("Cancel")
                     .show();
-
+*/
         }
         else if (v == passwordButton) {
-
             showEditPasswordDialog();
-
         }
     }
 
+    /**
+     * Displays the edit password dialog after button onClick
+     */
     private void showEditPasswordDialog() {
 
+        //TODO STUPID LIBRARY
+        /*
         MaterialDialog.Builder builder = new MaterialDialog.Builder(this)
                 .callback(new MaterialDialog.ButtonCallback() {
                     @Override
@@ -184,10 +184,6 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                         super.onPositive(dialog);
                     }
 
-                    @Override
-                    public void onNegative(MaterialDialog dialog) {
-                        super.onNegative(dialog);
-                    }
                 });
 
         builder.title("Change Password")
@@ -195,45 +191,49 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                 .negativeText("Cancel")
                 .customView(R.layout.layout_dialog_custom, false)
                 .show();
+          */
 
     }
 
-
+    /**
+     * Verifies that the two entered passwords are equal
+     * @param incomingPass1 The first password
+     * @param incomingPass2 The second password
+     * @return True if equal, false otherwise
+     */
     private boolean areValidPasswords(String incomingPass1, String incomingPass2) {
 
         int result = Validations.areValidPasswords(incomingPass1, incomingPass2);
 
         if (result == Validations.INCORRECT_LENGTH_TOP) {
-            Toast.makeText(this, "Invalid Password Length", Toast.LENGTH_SHORT);
+            Toast.makeText(this, "Invalid Password Length", Toast.LENGTH_SHORT).show();
             return false;
         }
         else if (result == Validations.INCORRECT_LENGTH_BOT) {
-            Toast.makeText(this, "Invalid Password Length", Toast.LENGTH_SHORT);
+            Toast.makeText(this, "Invalid Password Length", Toast.LENGTH_SHORT).show();
             return false;
         }
         else if (result == Validations.REPEAT_NOT_SAME) {
-            Toast.makeText(this, "Passwords Do Not Match", Toast.LENGTH_SHORT);
+            Toast.makeText(this, "Passwords Do Not Match", Toast.LENGTH_SHORT).show();
             return false;
         }
 
         return true;
     }
 
-
-
+    /**
+     * Updates the password of the user on the server
+     * @param newPassword The new password entered
+     */
     private void updatePassword(final String newPassword){
 
 
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
+        List<NameValuePair> params = new LinkedList<>();
         params.add(new BasicNameValuePair("userId", sharedPref.getString("user_id", "")));
         params.add(new BasicNameValuePair("password", Validations.get_SHA_1_SecurePassword(newPassword)));
 
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/resetPassword?"+paramString;
-
-
-        System.out.println("resetPassword url: " + url);
-
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject)null,
@@ -244,10 +244,7 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                         try {
 
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("resetPassword result "+result);
                             if(result.getString("success").equalsIgnoreCase("1")){
-
-                                //JSONArray questionAndTags = result.getJSONObject("result").getJSONArray("myArrayList");
                                 Toast.makeText(SettingsActivity.this, "Your password has been updated!", Toast.LENGTH_SHORT).show();
 
                             }
@@ -268,28 +265,21 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
             }
 
         });
-
-
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
-
-
     }
 
-
-
+    /**
+     * Updates the email of the user on the server
+     * @param newEmail The newly entered email
+     */
     private void updateEmail(final String newEmail){
 
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
+        List<NameValuePair> params = new LinkedList<>();
         params.add(new BasicNameValuePair("email", newEmail));
         params.add(new BasicNameValuePair("userId", sharedPref.getString("user_id", "")));
 
-
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/resetEmail?"+paramString;
-
-
-        System.out.println("updateEmail url: " + url);
-
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject)null,
@@ -300,7 +290,6 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                         try {
 
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("resetPassword result "+result);
                             if(result.getString("success").equalsIgnoreCase("1")){
 
                                 SharedPreferences.Editor editor = sharedPref.edit();
@@ -326,48 +315,45 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
 
         });
 
-
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
-
-
-
     }
 
-
-
+    /**
+     * Updates the distance preferences of the user
+     * @param distance The new distance
+     */
     private void updateDistance(int distance){
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt("distance", distance);
         editor.commit();
     }
 
-
-
+    /**
+     * Displays a spinner for changing your cover image
+     */
     public class CustomSpinnerAdapter extends ArrayAdapter<String>{
-        TypedArray imgs = getResources().obtainTypedArray(R.array.cover_imgs);
+        final TypedArray imgs = getResources().obtainTypedArray(R.array.cover_imgs);
 
-        public CustomSpinnerAdapter(Context context, int textViewResourceId,   String[] objects) {
-            super(context, textViewResourceId, objects);
+        public CustomSpinnerAdapter(Context context, String[] objects) {
+            super(context, R.layout.spinner_cover_item, objects);
         }
 
         @Override
         public View getDropDownView(int position, View convertView,ViewGroup parent) {
-            return getCustomView(position, convertView, parent);
+            return getCustomView(position, parent);
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            return getCustomView(position, convertView, parent);
+            return getCustomView(position, parent);
         }
 
-        public View getCustomView(int position, View convertView, ViewGroup parent) {
+        public View getCustomView(int position, ViewGroup parent) {
 
             LayoutInflater inflater=getLayoutInflater();
             View row = inflater.inflate(R.layout.spinner_cover_item, parent, false);
 
-
             ImageView icon = (ImageView)row.findViewById(R.id.cover_image);
-            //icon.setImageResource(arr_images[position]);
             icon.setImageResource(imgs.getResourceId(position, 0));
 
             return row;

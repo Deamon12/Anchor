@@ -4,13 +4,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -32,13 +33,10 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.Circle;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -64,10 +62,6 @@ public class MapFragment extends Fragment implements
     private final int PROFILE_ACTIVITY = 505;
     LocationRequest mLocationRequest;
     Location mCurrentLocation;
-    //private LocationManager locationManager = null;
-
-    //private android.location.LocationListener otherLocationListener;
-    //private LocationSource.OnLocationChangedListener mOnLocationChangedListener;
 
     private GoogleMap mMap;
     private MapView mMapView;
@@ -92,9 +86,6 @@ public class MapFragment extends Fragment implements
     private JSONArray mQuestionList;
     private LayoutInflater minflater;
 
-    private Circle circleOuter, circleCenter;
-    //private CircleOptions center;
-    //private CircleOptions outer;
     SharedPreferences sharedPref;
 
 
@@ -106,7 +97,6 @@ public class MapFragment extends Fragment implements
     }
 
     public MapFragment() {
-        // Required empty public constructor
     }
 
     @Override
@@ -136,40 +126,14 @@ public class MapFragment extends Fragment implements
         sharedPref = mContext.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-
-/*  //Battery drain fix
-        otherLocationListener = new android.location.LocationListener(){
-
-            @Override
-            public void onLocationChanged(Location location) {
-                mCurrentLocation = location;
-                stopLocationUpdates();
-                getMapData();
-                zoomToMyPosition();
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
-*/
-
         createAndShowMap();
 
         return rootView;
     }
 
+    /**
+     * Map initializer method, also starts getQuestionData flow
+     */
     public void createAndShowMap() {
 
         buildGoogleApiClient();
@@ -178,31 +142,7 @@ public class MapFragment extends Fragment implements
         mMapView.onCreate(new Bundle());
         mMap = mMapView.getMap();
 
-
-        LocationSource locationSource = new LocationSource() {
-            @Override
-            public void activate(OnLocationChangedListener onLocationChangedListener) {
-                System.out.println("onLocationChangedListener " + onLocationChangedListener);
-            }
-
-            @Override
-            public void deactivate() {
-                System.out.println("deactivate");
-                stopLocationUpdates();
-            }
-        };
-
-        mMap.setMyLocationEnabled(true); //TODO THIS IS KILLING BATTERY. Need custom locationSource
-
-        /*
-        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-            @Override
-            public boolean onMyLocationButtonClick() {
-                zoomToMyPosition();
-                startLocationUpdates();
-                return false;
-            }
-        });*/
+        mMap.setMyLocationEnabled(true);
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerClickListener(this);
         mMap.getUiSettings().setMapToolbarEnabled(false);
@@ -210,30 +150,21 @@ public class MapFragment extends Fragment implements
 
         try {
             MapsInitializer.initialize(mContext);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-/*
-        //TODO this part of the battery drain fix
-        locationManager = (LocationManager)mContext.getSystemService(mContext.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        locationManager.requestLocationUpdates(0L, 0.0f, criteria, otherLocationListener, Looper.myLooper());
-
-        mMap.setLocationSource(locationSource);
-*/
-
 
     }
 
+    /**
+     * Volley call to retrieve question from server based on search criteria
+     */
     public void getMapData() {
 
         Set<String> filterList = new HashSet<String>(sharedPref.getStringSet("filter_list", new HashSet<String>()));
 
         List<String> myList = new ArrayList<String>();
         myList.addAll(filterList);
-
 
         double latitude = 32.88006;
         double longitude = -117.2340133;
@@ -244,7 +175,6 @@ public class MapFragment extends Fragment implements
         } else {
             System.out.println("Could not get location, using UCSD as default");
         }
-
 
         List<NameValuePair> params = new LinkedList<NameValuePair>();
         params.add(new BasicNameValuePair("latitude", latitude + ""));
@@ -258,8 +188,6 @@ public class MapFragment extends Fragment implements
         String paramString = URLEncodedUtils.format(params, "utf-8").replace("+", "%20");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/getQuestions?" + paramString;
 
-
-        System.out.println("map get question URL: "+url);
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET,
                 url,
                 (JSONObject) null,
@@ -270,8 +198,6 @@ public class MapFragment extends Fragment implements
                         try {
 
                             JSONObject theResponse = new JSONObject(response.toString());
-                            //System.out.println("getQuestions: " + theResponse);
-
                             if (!theResponse.getString("success").equalsIgnoreCase("1")) {
                                 //Error getting data
                                 return;
@@ -298,33 +224,29 @@ public class MapFragment extends Fragment implements
             public void onErrorResponse(VolleyError error) {
                 showConnectionIssueDialog();
                 System.out.println("Error: " + error.toString());
-
             }
         });
 
         // Access the RequestQueue through your singleton class.
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
 
-
     }
 
 
+    /**
+     * Iterates over retrieved overlay data and publishes them to UI
+     */
     private void showOverlays() {
 
+        //Clear old overlays first
         if (mMap != null) {
             mMap.clear();
 
-
             for (int i = 0; i < mQuestionList.length(); i++) {
-
                 try {
-
-                    //System.out.println("OVeRLAYS question: " + mQuestionList.getJSONObject(i).getJSONObject("map"));
-
 
                     if (mQuestionList.getJSONObject(i).getJSONObject("map").has("visible_location") &&
                             mQuestionList.getJSONObject(i).getJSONObject("map").getInt("visible_location") == 1) {
-
 
                         double latitude = Double.parseDouble(mQuestionList.getJSONObject(i).getJSONObject("map").getString("latitude"));
                         double longitude = Double.parseDouble(mQuestionList.getJSONObject(i).getJSONObject("map").getString("longitude"));
@@ -334,10 +256,8 @@ public class MapFragment extends Fragment implements
                             userImageUrl = mQuestionList.getJSONObject(i).getJSONObject("map").getString("image");
                         }
 
-
                         View marker = minflater.inflate(R.layout.custom_map_marker, null, false);
                         ImageView userImage = (ImageView) marker.findViewById(R.id.question_image);
-
 
                         if (userImageUrl != null && !userImageUrl.equalsIgnoreCase("")) {
                             setMarkerImage(userImageUrl, i, userImage, new LatLng(latitude, longitude));
@@ -346,24 +266,23 @@ public class MapFragment extends Fragment implements
                                     .position(new LatLng(latitude, longitude))
                                     .snippet(i + "")
                                     .icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(mContext, marker))));
-
                         }
-
                     }
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
             }
-            //showMyLocation();
-
         }
 
     }
 
 
-    // Convert a view to bitmap
+    /**
+     * Creates the marker overlays by inflating a custom layout and turning it into a bitmap
+     * @param context Context to use
+     * @param view View to inlfate
+     * @return Bitmap from view
+     */
     public static Bitmap createDrawableFromView(Context context, View view) {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -379,16 +298,16 @@ public class MapFragment extends Fragment implements
         return bitmap;
     }
 
+    /**
+     * google api client for location updates
+     */
     protected synchronized void buildGoogleApiClient() {
-
-                mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
-                        .addConnectionCallbacks(this)
-                        .addOnConnectionFailedListener(this)
-                        .addApi(LocationServices.API)
-                        .build();
-
-                mGoogleApiClient.connect();
-
+        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
     }
 
 
@@ -424,6 +343,9 @@ public class MapFragment extends Fragment implements
 
         LocationManager locationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
+
+
+
         Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
 
         float zoomDistance = mMap.getCameraPosition().zoom;
@@ -448,48 +370,7 @@ public class MapFragment extends Fragment implements
                     .build();                   // Creates a CameraPosition from the builder
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }
-
-        //showMyLocation();
-
     }
-
-    /**
-     * Custom image for use with disable myLocation feature (battery drain)
-     */
-    private void showMyLocation(){
-
-        if(circleOuter != null){
-            circleOuter.remove();
-            circleCenter.remove();
-        }
-
-        CircleOptions center = new CircleOptions()
-                .fillColor(Color.parseColor("#9003A9F4"))
-                .strokeWidth(0)
-                .radius(5)
-                .center(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
-        CircleOptions outer = new CircleOptions()
-                .fillColor(Color.parseColor("#4003A9F4"))
-                .strokeWidth(0)
-                .radius(15)
-                .center(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
-
-
-        View layout = minflater.inflate(R.layout.user_location_layout, null, false);
-        ImageView theImage = (ImageView) layout.findViewById(R.id.user_image);
-
-
-        //String imageUrl, final int position, final ImageView imageView, final LatLng location
-        setMarkerImage(mUserImageUrl, -5, theImage, new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
-
-
-        circleOuter = mMap.addCircle(outer);
-        circleCenter = mMap.addCircle(center);
-
-
-    }
-
-
 
 
     protected void startLocationUpdates() {
@@ -506,7 +387,6 @@ public class MapFragment extends Fragment implements
         mLocationRequest.setInterval(10000);
         mLocationRequest.setFastestInterval(5000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
         startLocationUpdates();
 
     }
@@ -514,7 +394,6 @@ public class MapFragment extends Fragment implements
     @Override
     public void onConnected(Bundle bundle) {
         mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
         createLocationRequest();
 
     }
@@ -533,14 +412,16 @@ public class MapFragment extends Fragment implements
         ((MainActivity) getActivity()).showSnackbar();
     }
 
-
     protected void stopLocationUpdates() {
-        if(mGoogleApiClient.isConnected())
+        if (mGoogleApiClient.isConnected())
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-
-        //Battery drain - locationManager.removeUpdates(otherLocationListener);
     }
 
+    /**
+     * Fragment visibility indicator method
+     *
+     * @param isVisibleToUser boolean
+     */
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
@@ -562,30 +443,11 @@ public class MapFragment extends Fragment implements
     }
 
 
-
-    /*
-    @Override
-    public void onResume() {
-        if (mMap != null && mMapView != null)
-            mMapView.onResume();
-        if (detailsLayout.getVisibility() == View.VISIBLE)
-            ((MainActivity) getActivity()).hideFab();
-        super.onResume();
-
-    }
-
-    @Override
-    public void onPause() {
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
-            stopLocationUpdates();
-        mMapView.onPause();
-
-        super.onPause();
-    }
-
+    /**
+     * Map click listener
+     *
+     * @param latLng
      */
-
-
     @Override
     public void onMapClick(LatLng latLng) {
         detailsLayout.setVisibility(View.GONE);
@@ -593,9 +455,14 @@ public class MapFragment extends Fragment implements
     }
 
 
+    /**
+     * Update lower question details tile with clicked marker
+     *
+     * @param marker GoogleMarker
+     * @return boolean
+     */
     @Override
     public boolean onMarkerClick(Marker marker) {
-
 
         try {
             int position = Integer.parseInt(marker.getSnippet());
@@ -641,8 +508,6 @@ public class MapFragment extends Fragment implements
             //Distance data
             double latitude = Double.parseDouble(mQuestionList.getJSONObject(position).getJSONObject("map").getString("latitude"));
             double longitude = Double.parseDouble(mQuestionList.getJSONObject(position).getJSONObject("map").getString("longitude"));
-
-
             String distanceType = sharedPref.getString("distanceType", "MI");
 
             if (mCurrentLocation != null) {
@@ -653,7 +518,6 @@ public class MapFragment extends Fragment implements
                 distanceDetails.setVisibility(View.INVISIBLE);
                 System.out.println("mCurrentLocation and lastknown is null");
             }
-
 
             showMapToolbar(marker.getPosition());
             ((MainActivity) getActivity()).hideFab();
@@ -684,10 +548,17 @@ public class MapFragment extends Fragment implements
 
     }
 
+    /**
+     * Custom LRU query saves result image to marker imageview
+     *
+     * @param imageUrl  String
+     * @param position  position in data structure
+     * @param imageView ImageView
+     * @param location  LatLng location
+     */
     private void setMarkerImage(String imageUrl, final int position, final ImageView imageView, final LatLng location) {
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
-
         imageLoader.get(imageUrl, new ImageLoader.ImageListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
@@ -698,40 +569,37 @@ public class MapFragment extends Fragment implements
             public void onResponse(ImageLoader.ImageContainer response, boolean arg1) {
                 if (response.getBitmap() != null) {
 
-                        imageView.setImageBitmap(response.getBitmap());
-                        mMap.addMarker(new MarkerOptions()
-                                .position(location)
-                                .snippet(position + "")
-                                .icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(mContext, (View) imageView.getParent()))));
-
-
+                    imageView.setImageBitmap(response.getBitmap());
+                    mMap.addMarker(new MarkerOptions()
+                            .position(location)
+                            .snippet(position + "")
+                            .icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(mContext, (View) imageView.getParent()))));
 
                 } else {
 
-                        // Default image...
-                        mMap.addMarker(new MarkerOptions()
-                                .position(location)
-                                .snippet(position + "")
-                                .icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(mContext, (View) imageView.getParent()))));
-
-
-
-
+                    // Default image...
+                    mMap.addMarker(new MarkerOptions()
+                            .position(location)
+                            .snippet(position + "")
+                            .icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(mContext, (View) imageView.getParent()))));
 
                 }
             }
         });
-
     }
 
+    /**
+     * LRU query
+     *
+     * @param imageUrl  String url
+     * @param imageView View to show retrieved image
+     */
     private void getUserImage(String imageUrl, final ImageView imageView) {
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
-
         imageLoader.get(imageUrl, new ImageLoader.ImageListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                //Log.e(TAG, "Image Load Error: " + error.getMessage());
             }
 
             @Override

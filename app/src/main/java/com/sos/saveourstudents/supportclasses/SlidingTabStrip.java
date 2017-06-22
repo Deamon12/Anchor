@@ -12,7 +12,7 @@ import android.widget.LinearLayout;
 import com.sos.saveourstudents.R;
 
 /**
- * Created by deamon on 4/21/15.
+ * To be used with SlidingTabLayout
  */
 class SlidingTabStrip extends LinearLayout {
 

@@ -20,7 +20,10 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-
+/**
+ * The global singleton used app wide. This is instantiated in the onCreate of the first Activity
+ * accessed by the app. This singleton manages all Volley calls and LRU caching calls.
+ */
 public class Singleton {
 
 	private final String TAG = "SOS Tag";
@@ -34,7 +37,6 @@ public class Singleton {
 	 * To initialize the class. It must be called before call the method getInstance()
 	 * @param ctx The Context used
 	 */
-
 	public static void initialize(Context ctx) {
 		mContext = ctx;
 	}
@@ -55,6 +57,7 @@ public class Singleton {
 	 */
 	private Singleton() {
 	}
+
 	/**
 	 * The main method used to get the instance
 	 */
@@ -76,7 +79,10 @@ public class Singleton {
 	}
 
 
-
+    /**
+     * Initialization of Volley Request Queue
+     * @return RequestQueue
+     */
 	public RequestQueue getRequestQueue() {
 		if (mRequestQueue == null) {
 			mRequestQueue = Volley.newRequestQueue(mContext);
@@ -86,6 +92,10 @@ public class Singleton {
 	}
 
 
+    /**
+     *  LRU Cache initialization
+     * @return ImageLoader
+     */
 	public ImageLoader getImageLoader() {
 		getRequestQueue();
 		if (mImageLoader == null) {
@@ -109,17 +119,29 @@ public class Singleton {
 		return this.mImageLoader;
 	}
 
+    /**
+     * Volley request call
+     * @param req Volley Request Object
+     * @param tag ID tag
+     */
 	public <T> void addToRequestQueue(Request<T> req, String tag) {
 		// set the default tag if tag is empty
 		req.setTag(TextUtils.isEmpty(tag) ? TAG : tag);
 		getRequestQueue().add(req);
 	}
 
+    /**
+     * Volley request call
+     * @param req Volley Request Object
+     */
 	public <T> void addToRequestQueue(Request<T> req) {
 		req.setTag(TAG);
 		getRequestQueue().add(req);
 	}
 
+    /**
+     * Volley helper class
+     */
 	public void cancelPendingRequests(Object tag) {
 		if (mRequestQueue != null) {
 			mRequestQueue.cancelAll(tag);
@@ -127,14 +149,18 @@ public class Singleton {
 	}
 
 
-
+    /**
+     * Converts mySql date format to shortened UI change in time format
+     * @param theDate String from database
+     * @return formatted difference between current date and given date
+     */
 	@SuppressLint("SimpleDateFormat")
 	public String doDateLogic(String theDate){
 		theDate = theDate.replace(",", "");
 
 
 		String newDate = null;
-		Date oldDate = null;
+		Date oldDate;
 
 		DateFormat dateFormat = new SimpleDateFormat("MMM dd yyyy hh:mm:ss a", Locale.ENGLISH);
 
@@ -188,11 +214,16 @@ public class Singleton {
 		return newDate;
 	}
 
-
-
-
-
-
+    /**
+     * This determines distance between to LatLong points
+     * Location1 and location2 order does not matter
+     * @param lat1 latitude
+     * @param lon1 longitude
+     * @param lat2 latitude
+     * @param lon2 longitude
+     * @param unit K for kilometers, N for nautical miles, M for meters, anything else for miles
+     * @return formatted distance string
+     */
 	public String doDistanceLogic(double lat1, double lon1, double lat2, double lon2, String unit) {
 		double theta = lon1 - lon2;
 		double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));

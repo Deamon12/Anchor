@@ -24,7 +24,6 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -51,20 +50,21 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, GoogleMap.OnMarkerDragListener, View.OnClickListener {
 
-
+    // Argument tags for the bundle placed on a new instance of the fragment
     private static final String QUESTION_LOCATION = "paramCoordinates";
     private static final String USER_IMAGE = "userImage";
 
+    // The inflater for the map's layout
     private LayoutInflater mInflater;
 
-    private LocationRequest mLocationRequest;
+    // Variables necessary for communication with the GoogleApi
     private GoogleMap mMap;
     private MapView mMapView;
     private Context mContext;
     private GoogleApiClient mGoogleApiClient;
-    private View rootView;
     private ImageView visibilityToggle;
 
+    // Information specific to the question and/or viewer
     private Location mCurrentLocation;
     private Location newLocation;
     private String userImageUrl;
@@ -73,13 +73,21 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
     private String mQuestionId;
     private boolean mIsMemberOfGroup;
 
+    /**
+     * Creates a new instance of the ViewQuestionLocationFragment
+     * @param questionId The questionId of the current group
+     * @param location The location that the group leader has set
+     * @param userImageUrl The URL of the group leader's profile image
+     * @param isEditable Whether the current viewer is the leader of the group
+     * @param isVisible Whether the group leader has decided to make the location visible
+     * @param isMember Whether the current viewer is a member of the group
+     * @return A new instance of the ViewQuestionLocationFragment
+     */
     public static ViewQuestionLocationFragment newInstance(String questionId,
                                                            Location location, String userImageUrl,
                                                            boolean isEditable, boolean isVisible,
                                                            boolean isMember) {
         ViewQuestionLocationFragment fragment = new ViewQuestionLocationFragment();
-        System.out.println("member frag: "+isMember);
-        System.out.println("visible frag: "+isVisible);
         Bundle args = new Bundle();
         args.putParcelable(QUESTION_LOCATION, location);
         args.putString(USER_IMAGE, userImageUrl);
@@ -91,10 +99,17 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         return fragment;
     }
 
+    /**
+     * Empty constructor
+     */
     public ViewQuestionLocationFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Grabs user's shared preferences values
+     * @param savedInstanceState Unused, necessary for overriding the method
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,12 +123,19 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         }
     }
 
+    /**
+     * Begins assigning ViewGroups to member variables after inflating views
+     * @param inflater The LayoutInflater of the current context
+     * @param container The container for all views in question
+     * @param savedInstanceState Unused, necessary for overriding the method
+     * @return The view of the activity
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         mContext = getActivity();
         mInflater = inflater;
-        rootView =  inflater.inflate(R.layout.fragment_view_group_location, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_view_group_location, container, false);
         mMapView = (MapView) rootView.findViewById(R.id.view_group_location_map);
 
         visibilityToggle = (ImageView) rootView.findViewById(R.id.visibility_toggle);
@@ -131,7 +153,9 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         return rootView;
     }
 
-
+    /**
+     * Controls visibility toggling for the ImageView of the visibility icon
+     */
     private void clickVisibilityToggle() {
         if(visibilityToggle.isSelected()){
             Toast.makeText(mContext, "Your location is now private", Toast.LENGTH_SHORT).show();
@@ -141,11 +165,11 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
             Toast.makeText(mContext, "Your location is now public", Toast.LENGTH_SHORT).show();
             visibilityToggle.setImageResource(R.drawable.ic_remove_red_eye_white_24dp);
         }
-
-        //toggleLocationVisible(visibilityToggle.isSelected());
-
     }
 
+    /**
+     * Initializes the MapView and shows the marker of the group owner's set location
+     */
     private void initializeMap(){
         mMapView.onCreate(new Bundle());
         mMap = mMapView.getMap();
@@ -153,7 +177,7 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         if(mEditable)
             mMap.setOnMarkerDragListener(this);
 
-        mMap.setMyLocationEnabled(true); //TODO THIS IS KILLING BATTERY. Need custom locationSource
+        mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setIndoorLevelPickerEnabled(true);
         try {
             MapsInitializer.initialize(mContext);
@@ -171,16 +195,12 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         else if(mIsMemberOfGroup){
             showCustomMarker();
         }
-        else{
-            //dont show
-        }
-
-
-
-
     }
 
-    protected synchronized void buildGoogleApiClient() {
+    /**
+     * Builds the GoogleApiClient to be able to use the maps API
+     */
+    private synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(mContext)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -189,18 +209,24 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         mGoogleApiClient.connect();
     }
 
-
-
+    /**
+     * Implemented method from GoogleApiClient
+     */
     @Override
     public void onConnected(Bundle bundle) {
-        //createLocationRequest(); //not needed for this fragment?
     }
 
+    /**
+     * Implemented method from GoogleApiClient
+     */
     @Override
     public void onConnectionSuspended(int i) {
 
     }
 
+    /**
+     * Implemented method from GoogleApiClient
+     */
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
@@ -210,28 +236,19 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
     @Override
     public void onLocationChanged(Location location) {
         stopLocationUpdates();
-
     }
 
-    protected void stopLocationUpdates() {
+    /**
+     * Stops updating the location of the MapView
+     */
+    private void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(
                 mGoogleApiClient, this);
     }
 
-    protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        startLocationUpdates();
-    }
-
-    protected void startLocationUpdates() {
-        LocationServices.FusedLocationApi.requestLocationUpdates(
-                mGoogleApiClient, mLocationRequest, this);
-    }
-
+    /**
+     * On resume, resume the MapView
+     */
     @Override
     public void onResume() {
         if(mMap != null && mMapView != null)
@@ -240,6 +257,9 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
 
     }
 
+    /**
+     * On pause, stop updating the map's location to preserve battery
+     */
     @Override
     public void onPause() {
         stopLocationUpdates();
@@ -247,6 +267,9 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         super.onPause();
     }
 
+    /**
+     * On destroy, stop updating the map's location to preserve battery
+     */
     @Override
     public void onDestroy() {
         stopLocationUpdates();
@@ -254,17 +277,12 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         super.onDestroy();
     }
 
-    @Override
-    public void onMarkerDragStart(Marker marker) {
-    }
-
-    @Override
-    public void onMarkerDrag(Marker marker) {
-    }
-
+    /**
+     * Open dialog once marker has been set
+     * @param marker The marker of the group's location
+     */
     @Override
     public void onMarkerDragEnd(Marker marker) {
-        //System.out.println("On marker drag end");
         newLocation = new Location("new");
         newLocation.setLatitude(marker.getPosition().latitude);
         newLocation.setLongitude(marker.getPosition().longitude);
@@ -272,7 +290,10 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
 
     }
 
-
+    /**
+     * Builds the dialog for asking the user whether they would like to set a new
+     * location or not
+     */
     private void showChangeLocationDialog(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
@@ -301,7 +322,9 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
 
     }
 
-
+    /**
+     * Method for displaying the custom marker of the group owner and his set location
+     */
     private void showCustomMarker(){
 
         View markerLayout = mInflater.inflate(R.layout.custom_map_marker, null, false);
@@ -332,8 +355,13 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
 
     }
 
-    // Convert a view to bitmap
-    public static Bitmap createDrawableFromView(Context context, View view) {
+    /**
+     * Creates a Bitmap given a View object
+     * @param context The context of the given view
+     * @param view The view to be converted
+     * @return The created bitmap
+     */
+    private static Bitmap createDrawableFromView(Context context, View view) {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         view.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
@@ -348,6 +376,12 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
         return bitmap;
     }
 
+    /**
+     * Displays the group leader's profile image on the map marker
+     * @param imageUrl The URL of the image
+     * @param imageView The ImageView to be populated
+     * @param location The location of the marker
+     */
     private void setMarkerImage(String imageUrl, final ImageView imageView, final LatLng location){
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
@@ -361,8 +395,6 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
                 if (response.getBitmap() != null) {
                     imageView.setImageBitmap(response.getBitmap());
 
-                } else {
-                    // Default image...
                 }
 
                 MarkerOptions markerOptions = new MarkerOptions()
@@ -387,100 +419,19 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
 
     }
 
-
-/*
-
-    private void toggleLocationVisible(final boolean isVisible) {
-
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
-        params.add(new BasicNameValuePair("questionId", mQuestionId));
-        params.add(new BasicNameValuePair("visibility", (isVisible ? 1 : 0)+""));
-
-        String paramString = URLEncodedUtils.format(params, "utf-8");
-        String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/setVisibility?" + paramString;
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
-                (JSONObject) null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-
-                        try {
-                            JSONObject result = new JSONObject(response.toString());
-                            System.out.println("setVisibility result "+result);
-                            if (result.getString("success").equalsIgnoreCase("1")) {
-                                visibilityToggle.setSelected(!visibilityToggle.isSelected());
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }, new Response.ErrorListener(){
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                if( ((ViewQuestionActivity) getActivity()) != null)
-                    ((ViewQuestionActivity) getActivity()).mSnackBar.show();
-            }
-
-        });
-
-        Singleton.getInstance().addToRequestQueue(jsObjRequest);
-    }
-*/
-    /*
-    private void setLocationVisibility(boolean isVisible) {
-
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
-        params.add(new BasicNameValuePair("questionId", mQuestionId));
-        params.add(new BasicNameValuePair("visibility", (isVisible ? 1 : 0)+""));
-
-        String paramString = URLEncodedUtils.format(params, "utf-8");
-        String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/setVisibility?" + paramString;
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
-                (JSONObject) null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-
-                        try {
-                            JSONObject result = new JSONObject(response.toString());
-                            //System.out.println("setVisibility result "+result);
-                            if (result.getString("success").equalsIgnoreCase("1")) {
-
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }, new Response.ErrorListener(){
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
-                if( ((ViewQuestionActivity) getActivity()) != null)
-                    ((ViewQuestionActivity) getActivity()).mSnackBar.show();
-            }
-
-        });
-
-        Singleton.getInstance().addToRequestQueue(jsObjRequest);
-    }*/
-
-
+    /**
+     * Request to the server for updating the question's new location
+     * @param newLocation The new location w/ latitude and longitude
+     */
     private void editQuestionLocation(Location newLocation){
 
-        List<NameValuePair> params = new LinkedList<NameValuePair>();
+        List<NameValuePair> params = new LinkedList<>();
         params.add(new BasicNameValuePair("questionId", mQuestionId));
-        params.add(new BasicNameValuePair("latitude", newLocation.getLatitude()+""));
-        params.add(new BasicNameValuePair("longitude", newLocation.getLongitude()+""));
+        params.add(new BasicNameValuePair("latitude", newLocation.getLatitude() + ""));
+        params.add(new BasicNameValuePair("longitude", newLocation.getLongitude() + ""));
 
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/editLocation?"+paramString;
-
-
-        System.out.println("url: " + url);
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject)null,
@@ -491,14 +442,13 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
                         try {
 
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("edit questions result "+result);
                             if(result.getString("success").equalsIgnoreCase("1")){
-
-                                Toast.makeText(mContext, "Location updated", Toast.LENGTH_SHORT);
-
+                                Toast.makeText(mContext, "Location Updated!", Toast.LENGTH_SHORT)
+                                        .show();
                             }
                             else{
-                                Toast.makeText(mContext, "Error updating location", Toast.LENGTH_SHORT);
+                                Toast.makeText(mContext, "Error Updating Location", Toast.LENGTH_SHORT)
+                                        .show();
                             }
 
                         } catch (JSONException e) {
@@ -510,8 +460,7 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
-                if( ((ViewQuestionActivity) getActivity()) != null)
+                if(getActivity() != null)
                     ((ViewQuestionActivity) getActivity()).mSnackBar.show();
             }
 
@@ -521,11 +470,23 @@ public class ViewQuestionLocationFragment extends android.support.v4.app.Fragmen
 
     }
 
-
+    /**
+     * Sets up OnClickListeners for all views that have said functionality
+     * @param v The view in question
+     */
     @Override
     public void onClick(View v) {
         if(v == visibilityToggle){
             clickVisibilityToggle();
         }
+    }
+
+    // Necessary for interface, no implementation needed for this Fragment
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
     }
 }

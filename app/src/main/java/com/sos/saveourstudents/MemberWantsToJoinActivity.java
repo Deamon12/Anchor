@@ -27,12 +27,13 @@ import java.util.List;
 
 
 /**
- * Created by Xian on 5/16/2015.
+ * Activity for the push notification sent after a user requests to join your group
  */
 public class MemberWantsToJoinActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private String mQuestionId;
-    private String mUserId;
+    private String mQuestionId; // The questionId of the group
+    private String mUserId; // The userId of the requester
+
     private String mType;
     FloatingActionButton acceptButton;
     FloatingActionButton declineButton;
@@ -43,6 +44,10 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
     private String mRemoveMemberUrl =
             "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/removeUser?userId=";
 
+    /**
+     * Initializes the singleton and begin setting up member variables
+     * @param savedInstanceState Unused, necessary for method
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,11 +58,6 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
         }
 
         if (getIntent().getExtras() != null) {
-
-            System.out.println("Extras: " + getIntent().getExtras());
-            System.out.println("userId: " + getIntent().getExtras().getString("userId"));
-            System.out.println("type: " + getIntent().getExtras().getString("type"));
-
             mUserId = getIntent().getExtras().getString("userId");
             mQuestionId = getIntent().getExtras().getString("questionId");
             mType = getIntent().getExtras().getString("type");
@@ -65,7 +65,6 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
 
 
         getUserInfo();
-
 
         userProfile = (RelativeLayout) findViewById(R.id.joining_member_info);
         acceptButton = (FloatingActionButton) findViewById(R.id.accept_fab);
@@ -76,6 +75,10 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
         declineButton.setOnClickListener(this);
     }
 
+    /**
+     * Setup for all OnClickListeners for the views of the activity
+     * @param v The view in question
+     */
     public void onClick(View v) {
 
         if (v == acceptButton) {
@@ -90,7 +93,11 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
 
     }
 
-
+    /**
+     * Grabs the current user's image from the database
+     * @param imageUrl The URL of the image
+     * @param imageView The ImageView to be populated
+     */
     private void getUserImage(String imageUrl, final ImageView imageView) {
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
@@ -98,7 +105,6 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
         imageLoader.get(imageUrl, new ImageLoader.ImageListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                //Log.e(TAG, "Image Load Error: " + error.getMessage());
             }
 
             @Override
@@ -113,7 +119,9 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
 
     }
 
-
+    /**
+     * Grabs the requester's info from the database
+     */
     private void getUserInfo() {
 
         List<NameValuePair> params = new LinkedList<NameValuePair>();
@@ -122,24 +130,16 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/getUserById?" + paramString;
 
-
-        System.out.println("getUserById url: " + url);
-
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null,
                 new Response.Listener<JSONObject>() {
-
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("getUserById result " + result);
                             if (result.getString("success").equalsIgnoreCase("1")) {
 
                                 JSONObject userObject = result.getJSONObject("result").getJSONArray("myArrayList").getJSONObject(0).getJSONObject("map");
-
-
                                 String name = userObject.getString("first_name") + " " + userObject.getString("last_name");
 
                                 TextView joiningMemberName = (TextView) findViewById(R.id.member_name);
@@ -157,7 +157,6 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
                                     getUserImage(userObject.getString("image"), userImage);
                                 }
 
-
                             } else {
                                 //Error...
                             }
@@ -171,44 +170,37 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
             }
-
         });
 
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
-
     }
 
+    /**
+     * If accept button is clicked, the member is added to the group in a server call
+     */
     private void addMembertoGroup() {
 
         List<NameValuePair> params = new LinkedList<NameValuePair>();
         params.add(new BasicNameValuePair("questionId", mQuestionId));
         params.add(new BasicNameValuePair("userId", mUserId));
-        params.add(new BasicNameValuePair("tutor", (mType.equalsIgnoreCase("2") ? 1 : 0) + "")); //((mType.equalsIgnoreCase("2") ? 1 : 0)+"")
+        params.add(new BasicNameValuePair("tutor", (mType.equalsIgnoreCase("2") ? 1 : 0) + ""));
 
         String paramString = URLEncodedUtils.format(params, "utf-8");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/acceptUser?" + paramString;
 
-
-        System.out.println("adduser url: " + url);
-
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null,
                 new Response.Listener<JSONObject>() {
-
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
                             JSONObject result = new JSONObject(response.toString());
-                            System.out.println("adduser result " + result);
                             if (result.getString("success").equalsIgnoreCase("1")) {
                                 finish();
                             } else {
-                                //Error...
-                                Toast.makeText(MemberWantsToJoinActivity.this, "Error Accepting user", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MemberWantsToJoinActivity.this, "Error Accepting User", Toast.LENGTH_SHORT).show();
                             }
-
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -219,17 +211,15 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println("Error with connection or url: " + error.toString());
             }
 
         });
-
-
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
-
-
     }
 
+    /**
+     * Removes the user from his current group if accepted and he is current in a group
+     */
     private void removeUserFromCurrentGroup() {
         String isJoinerInGroup = mInGroupUrl + mUserId;
         JsonObjectRequest inGroupRequest = new JsonObjectRequest(Request.Method.GET, isJoinerInGroup,
@@ -238,7 +228,6 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
             public void onResponse(JSONObject response) {
                 try {
                     JSONObject result = new JSONObject(response.toString());
-
                     if(result.getInt("expectResults") != 0) {
                         String removeMemberFromGroup = mRemoveMemberUrl + mUserId;
                         JsonObjectRequest removeMemberRequest =
@@ -270,8 +259,11 @@ public class MemberWantsToJoinActivity extends AppCompatActivity implements View
 
     }
 
+    /**
+     * ResponseListener for removing the user from his current group
+     * Starts call to add the member to the group that is accepting said user
+     */
     private class RemoveUserFromGroupResponseListener implements Response.Listener<JSONObject> {
-
         @Override
         public void onResponse(JSONObject response) {
             addMembertoGroup();

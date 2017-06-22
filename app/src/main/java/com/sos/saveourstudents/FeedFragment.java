@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by deamon on 4/21/15.
+ * Fragment displays local question data in a recyclerView (list) layout.
  */
 public class FeedFragment extends Fragment implements LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -75,8 +75,8 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
         return fragment;
     }
 
+    // Required empty public constructor
     public FeedFragment() {
-        // Required empty public constructor
     }
 
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -109,10 +109,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
             Singleton.initialize(mContext);
         }
 
-
         initializeRecyclerView();
-
-
         sharedPref = mContext.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
@@ -121,32 +118,23 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
         getActivity().getTheme().resolveAttribute(android.support.v7.appcompat.R.attr.actionBarSize, typed_value, true);
         mSwipeRefreshLayout.setProgressViewOffset(false, 0, getResources().getDimensionPixelSize(typed_value.resourceId));
         mSwipeRefreshLayout.setRefreshing(true);
-
-/*
-        LocationManager locationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        lastKnownLocation = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
-*/
-
         buildGoogleApiClient();
-
 
         return rootView;
     }
 
+    /**
+     * Instantiate and prepare RecyclerView helper method
+     */
     private void initializeRecyclerView() {
-
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.my_recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-
-
         mSwipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 buildGoogleApiClient(); //Get current location and update UI
-                //getQuestionData();
             }
         });
 
@@ -170,25 +158,17 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
             }
         });
 
-
     }
 
-
-    @Override
-    public void onResume() {
-        super.onResume();
-    }
 
     @Override
     public void onPause() {
-        //if(mGoogleApiClient != null && mGoogleApiClient.isConnected())
         stopLocationUpdates();
         super.onPause();
     }
 
     @Override
     public void onDestroy() {
-        //if(mGoogleApiClient != null && mGoogleApiClient.isConnected())
         stopLocationUpdates();
         super.onDestroy();
     }
@@ -241,8 +221,8 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
         String paramString = URLEncodedUtils.format(params, "utf-8").replace("+", "%20");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/getQuestions?" + paramString;
 
-
         //System.out.println("feed get question URL: "+url);
+
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET,
                 url,
                 (JSONObject) null,
@@ -310,26 +290,26 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
             @Override
             public void onErrorResponse(VolleyError error) {
                 showConnectionIssueDialog();
-                //System.out.println("Error: " + error.toString());
 
             }
         });
 
-        // Access the RequestQueue through your singleton class.
+        // Access the RequestQueue through singleton class.
         Singleton.getInstance().addToRequestQueue(jsObjRequest);
 
-
     }
 
+    /**
+     * Show retrieved question data to UI
+     */
+    private void showQuestions(){
 
-    private void showQuestions() {
         mSwipeRefreshLayout.setRefreshing(false);
-
         mAdapter = new RecycleViewAdapter(R.layout.feed_item_layout);
         mRecyclerView.setAdapter(mAdapter);
-
         stopLocationUpdates();
     }
+
 
     @Override
     public void onLocationChanged(Location location) {
@@ -341,9 +321,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
     @Override
     public void onConnected(Bundle bundle) {
         mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
         getLocationUpdate();
-
     }
 
     @Override
@@ -362,12 +340,12 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
     }
 
 
+
     public void getLocationUpdate() {
         mSwipeRefreshLayout.setRefreshing(true);
         createLocationRequest();
 
     }
-
 
     protected void startLocationUpdates() {
         if (mGoogleApiClient.isConnected())
@@ -382,6 +360,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
     }
 
     protected void createLocationRequest() {
+
         //System.out.println("Creating new locationRequest in feed");
         //if(mLocationRequest == null) {
         mLocationRequest = new LocationRequest();
@@ -395,8 +374,8 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
 
 
     protected synchronized void buildGoogleApiClient() {
-        //mSwipeRefreshLayout.setRefreshing(true);
 
+        mSwipeRefreshLayout.setRefreshing(true);
         mGoogleApiClient = new GoogleApiClient.Builder(mContext)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -404,19 +383,20 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
                 .build();
 
         mGoogleApiClient.connect();
-
-
     }
 
 
-    private void getUserImage(String imageUrl, final ImageView imageView) {
+    /**
+     * LRU query
+     * @param imageUrl String url
+     * @param imageView View to show retrieved image
+     */
+    private void getUserImage(String imageUrl, final ImageView imageView){
 
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
-
         imageLoader.get(imageUrl, new ImageLoader.ImageListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                //Log.e(TAG, "Image Load Error: " + error.getMessage());
             }
 
             @Override
@@ -434,10 +414,13 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
     }
 
 
-    public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.ViewHolder> {
+
+    /**
+     * Feed Item recycler view. Handles UI events related to recycler layout
+     */
+    public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.ViewHolder>{
 
         private int rowLayout;
-
         public RecycleViewAdapter(int rowLayout) {
             this.rowLayout = rowLayout;
         }
@@ -450,11 +433,8 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
 
         @Override
         public void onBindViewHolder(ViewHolder viewHolder, int position) {
-            //viewHolder.questionText.setText(mCardManagerInstance.getCounters().get(i).title+"");
-            //viewHolder.venueType.setText(mInstance.getCounters().get(i)+"");
-            try {
-                //System.out.println("question: "+mQuestionList.getJSONObject(position).getJSONObject("map"));
 
+            try {
                 String firstName = mQuestionList.getJSONObject(position).getJSONObject("map").getString("first_name");
                 String lastName = mQuestionList.getJSONObject(position).getJSONObject("map").getString("last_name");
                 String theDate = mQuestionList.getJSONObject(position).getJSONObject("map").getString("date");
@@ -499,20 +479,17 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
                     firstName = firstName.substring(0, 13).concat("...");
                 }
 
-                //System.out.println("Question " + position + ": " + mQuestionList.getJSONObject(position).getJSONObject("map"));
                 viewHolder.nameText.setText(firstName + " " + lastName.charAt(0) + '.');
-
-                //System.out.println("date: " + Singleton.getInstance().doDateLogic(theDate));
                 viewHolder.questionText.setText(text);
 
                 viewHolder.dateText.setText(Singleton.getInstance().doDateLogic(theDate));
-
                 viewHolder.topicText.setText(topic);
 
                 String distanceType = sharedPref.getString("distanceType", "MI");
 
 
                 if (mCurrentLocation != null) {
+                  
                     viewHolder.distanceText.setText(
                             Singleton.getInstance().doDistanceLogic(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(),
                                     latitude, longitude, distanceType) + "" + distanceType);
@@ -526,12 +503,9 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
                     System.out.println("mCurrentLocation and lastknown is null");
                 }
 
-
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-
         }
 
         @Override
@@ -550,7 +524,6 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
             public TextView topicText;
             public TextView distanceText;
             private CardView cardView;
-
 
             //Declare views here, dont fill them
             public ViewHolder(View itemView) {
@@ -573,7 +546,6 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                //System.out.println("touched : "+getAdapterPosition());
 
                 if (v == cardView && event.getAction() == MotionEvent.ACTION_UP) {
 
@@ -586,9 +558,7 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-
                 }
-
                 return false;
             }
 
@@ -605,11 +575,9 @@ public class FeedFragment extends Fragment implements LocationListener, GoogleAp
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-
                 }
             }
         }
-
     }
 
 

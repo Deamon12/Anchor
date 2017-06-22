@@ -10,7 +10,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -27,27 +26,28 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-/**
- * Created by HTPC on 4/26/2015.
- */
 public class SignupActivity extends AppCompatActivity implements View.OnClickListener {
 
-    Validations validations = new Validations();
-    Button signUpBtn;
-    EditText passInput1, passInput2, emailInput, firstNameInput, lastNameInput;
-    Toast prompt;
-    Context appContext;
-
+    private final Validations validations = new Validations();
+    private Button signUpBtn;
+    private EditText passInput1;
+    private EditText passInput2;
+    private EditText emailInput;
+    private EditText firstNameInput;
+    private EditText lastNameInput;
 
     //GCM
-    public static final String PROPERTY_REG_ID = "registration_id";
+    private static final String PROPERTY_REG_ID = "registration_id";
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-    String SENDER_ID = "862374215545"; //Unique identifier for our project
-    GoogleCloudMessaging gcm;
-    String regid = null;
+    private final String SENDER_ID = "862374215545"; //Unique identifier for our project
+    private GoogleCloudMessaging gcm;
+    private String regid = null;
 
-
+    /**
+     * On create, begin assigning ViewGroups to member variables
+     * @param savedInstanceState The passed bundle of the app on creation, unused
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,10 +67,12 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
         signUpBtn = (Button) findViewById(R.id.signup_btn);
         signUpBtn.setOnClickListener(this);
 
-        appContext = getApplicationContext();   //Instantiate toast.
-        prompt = Toast.makeText(appContext, "", Toast.LENGTH_SHORT);
     }
 
+    /**
+     * Sets up OnClickListeners for specified views
+     * @param v The view in question
+     */
     @Override
     public void onClick(View v) {
         String emailInput1;
@@ -94,10 +96,6 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
             //Perform database signup
             if (passCheck && email && firstCheck && lastCheck && regid != null) {
 
-                //==================================================================================
-
-
-                //http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/createUser
                 String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/createUser?" +
                         "firstName=" + firstName  +
                         "&lastName=" + lastName  +
@@ -106,7 +104,6 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
                         "&email=" + emailInput1 +
                         "&deviceId=" + regid;
 
-                System.out.println("ur = " + url);
                 JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET,
                         url,(JSONObject)null, new Response.Listener<JSONObject>()
                         {
@@ -114,19 +111,13 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
                             public void onResponse(JSONObject response) {
                                 try {
 
-                                    JSONObject theResponse = new JSONObject(response.toString());
-
                                     if(response.getString("success").equalsIgnoreCase("1")){
                                         // Sign Up successful
-                                        //Intent loginActivity = new Intent(SignupActivity.this, LoginActivity.class);
-                                        //startActivity(loginActivity);
                                         finish();
 
-                                        return;
                                     } else {
                                         //Failed to Sign Up b/c email is taken
                                         emailInput.setError("Email is taken");
-                                        //response.getJSONObject("result").getJSONArray("myArrayList");
                                     }
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -137,18 +128,22 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
                     @Override
                     public void onErrorResponse(VolleyError error) {
 
-                        System.out.println("Error: " + error.toString());
                     }
                 });
 
 
                 Singleton.getInstance().addToRequestQueue(jsObjRequest);
-                //==================================================================================
             }
         }
 
     }
 
+    /**
+     * Run verifications on the password to make sure that they are the same
+     * @param incomingPass1 The password from the first field
+     * @param incomingPass2 The password from the second field
+     * @return True if equal, false otherwise
+     */
     private boolean verifyPassword(String incomingPass1, String incomingPass2) {
         int verifyPassword1 = validations.testPass(incomingPass1, incomingPass2);
 
@@ -178,10 +173,12 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
         return true;
     }
 
+    /**
+     * Verifies whether the email is a valid email
+     * @param incomingEmail The email in question
+     * @return True if valid, false otherwise
+     */
     private boolean verifyEmail(String incomingEmail) {
-        //boolean emailIsValid = validations.testEmailSignUp(incomingEmail);
-
-
         if (!Validations.isValidEmail(incomingEmail)) {
             emailInput.setError("bad email");
             return false;
@@ -193,20 +190,21 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
 
     }
 
-
-
+    /**
+     * Verify that the first and last name are valid
+     * @param incomingFirstLast The given first and last name
+     * @return True if valid, false otherwise
+     */
     private boolean verifyFirstLast(String incomingFirstLast) {
         boolean firstLastIsValid = validations.testFirstLast(incomingFirstLast);
 
-        if (firstLastIsValid == false) {
-            return false;
-        }
-        return true;
+        return firstLastIsValid;
 
     }
 
-
-
+    /**
+     * Retrieves the device ID of the current phone/tablet
+     */
     private void checkDeviceId(){
 
         //GCM
@@ -216,7 +214,6 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
             if (regid.isEmpty()) {
                 registerInBackground();
             } else {
-                System.out.println("Device registration ID: " + regid);
             }
         } else {
             Log.i("SOS", "No valid Google Play Services APK found.");
@@ -224,6 +221,10 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
 
     }
 
+    /**
+     * Checks if the device supports Google Play services
+     * @return True if supported, false otherwise
+     */
     private boolean checkPlayServices() {
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
         if (resultCode != ConnectionResult.SUCCESS) {
@@ -239,11 +240,16 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
         return true;
     }
 
+    /**
+     * Verifies the registration ID of the app
+     * @param context The context of the current activity
+     * @return The registration ID
+     */
     private String getRegistrationId(Context context) {
-        //final SharedPreferences prefs = getGCMPreferences(context);
         SharedPreferences sharedPref = getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         String registrationId = sharedPref.getString(PROPERTY_REG_ID, "");
+        assert registrationId != null;
         if (registrationId.isEmpty()) {
             Log.i("SOS", "Registration not found.");
             return "";
@@ -260,7 +266,11 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
         return registrationId;
     }
 
-
+    /**
+     * Grabs the current version of the app for verifications
+     * @param context The context of the activity
+     * @return The version of the app
+     */
     private static int getAppVersion(Context context) {
         try {
             PackageInfo packageInfo = context.getPackageManager()
@@ -272,25 +282,22 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-
+    /**
+     * Registers the device's device ID in the background using an AsyncTask
+     */
     private void registerInBackground() {
 
         new AsyncTask() {
 
             @Override
             protected String doInBackground(Object[] params) {
-                System.out.println("Params1: " + params);
-                String msg = "";
+                String msg;
                 try {
                     if (gcm == null) {
                         gcm = GoogleCloudMessaging.getInstance(SignupActivity.this);
                     }
                     regid = gcm.register(SENDER_ID);
                     msg = "Device registered, registration ID=" + regid;
-                    System.out.println("Device registered, registration ID=" + regid);
-                    // sendRegistrationIdToBackend();
-
-                    //storeRegistrationId(LoginActivity.this, regid);
                 } catch (IOException ex) {
                     msg = "Error :" + ex.getMessage();
                     // If there is an error, don't just keep trying to register.
@@ -301,18 +308,9 @@ public class SignupActivity extends AppCompatActivity implements View.OnClickLis
             }
 
 
-            protected void onPostExecute(String msg) {
+            protected void onPostExecute() {
             }
 
         }.execute(null, null, null);
-
     }
-
-
-
-
-
-
-
-
 }

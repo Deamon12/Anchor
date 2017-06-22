@@ -5,18 +5,28 @@ import android.os.Parcelable;
 import android.widget.ImageView;
 
 /**
- * Created by Brady on 4/25/15.
+ * Encapsulates all student information
  */
 public class Student implements Parcelable{
     private String firstName;
     private String lastName;
-    private int rating;
+    private final int rating;
     private String school;
     private String major;
     private String description;
     private ImageView profilePicture;
     private String profilePictureUrl;
 
+    /**
+     * Sets up a Student object based on given parameters, self explanatory
+     * @param firstName First name of the student
+     * @param lastName Last name of the student
+     * @param rating Current rating in the database
+     * @param school Personal school
+     * @param major Personal major
+     * @param description Personal description
+     * @param profilePictureUrl URL for the ImageViews set with the Student
+     */
     public Student(String firstName, String lastName, int rating, String school, String major,
                    String description, String profilePictureUrl) {
         this.firstName = firstName;
@@ -48,11 +58,6 @@ public class Student implements Parcelable{
     public int getRating() {
         return rating;
     }
-
-    public void setRating(int rating) {
-        this.rating = rating;
-    }
-
     public String getSchool() {
         return school;
     }

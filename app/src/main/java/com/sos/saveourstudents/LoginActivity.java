@@ -53,7 +53,6 @@ import java.util.List;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-
     //G+
     private static final int RC_SIGN_IN = 0;
     // Logcat tag
@@ -99,15 +98,13 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         callbackManager = CallbackManager.Factory.create();
         loginManager = LoginManager.getInstance();
 
-
-
-
         setContentView(R.layout.activity_login);
 
         if (!Singleton.hasBeenInitialized()) {
             Singleton.initialize(this);
         }
 
+        //Attempt to find deviceID for GCM notifications
         registerInBackground();
 
         forgotLoginBtn = (TextView) findViewById(R.id.forgot_login_btn);
@@ -126,7 +123,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this).addApi(Plus.API)
                 .addScope(Plus.SCOPE_PLUS_LOGIN).build();
-        //Clear shared prefs, logout of all accounts
+
         logoutAll();
 
         /**
@@ -147,15 +144,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                                     Profile profile = Profile.getCurrentProfile();
 
                                     if(profile != null) {
-                                        /*
-                                        System.out.println("object: " + object.getString("email"));
-                                        System.out.println("Profile changed: " + profile);
-                                        System.out.println("Save: " + profile.getFirstName());
-                                        System.out.println("Save: " + profile.getLastName());
-                                        System.out.println("Save: " + profile.getId());
-                                        System.out.println("Save: " + profile.getProfilePictureUri(100, 100));
-                                        */
-
                                         userImageUrl = profile.getProfilePictureUri(100, 100).toString();
                                         facebookEmail = object.getString("email");
 
@@ -164,9 +152,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                                                 profile.getLastName(),
                                                 profile.getId(),
                                                 facebookEmail);
-
                                     }
-
 
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -196,7 +182,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             @Override
             protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
 
-
             }
         };
 
@@ -204,7 +189,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         profileTracker.startTracking();
         fbLogin = (ImageView) findViewById(R.id.facebook_login_btn);
         fbLogin.setOnClickListener(this);
-
 
 
         //GCM
@@ -220,14 +204,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             Log.i(TAG, "No valid Google Play Services APK found.");
         }
 
-
-
     }
 
+    //Clear shared prefs, logout of all accounts
     private void logoutAll() {
         doFacebookLogout();
         signOutFromGplus();
-        //getGCMPreferences(this).edit().clear().commit();
         getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE).edit().clear().commit();
     }
 
@@ -235,11 +217,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
      * Gets the current registration ID for application on GCM service.
      * <p/>
      * If result is empty, the app needs to register.
-     *
      * @return registration ID, or empty string if there is no existing
      * registration ID.
      */
-
     private String getRegistrationId(Context context) {
         SharedPreferences sharedPref = getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
@@ -288,7 +268,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
             @Override
             protected String doInBackground(Object[] params) {
-                System.out.println("Params1: " + params);
                 String msg = "";
                 try {
                     if (gcm == null) {
@@ -296,9 +275,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                     }
                     regid = gcm.register(SENDER_ID);
                     msg = "Device registered, registration ID=" + regid;
-                    System.out.println("Device registered, registration ID=" + regid);
-
-
+                    //System.out.println("Device registered, registration ID=" + regid);
                     SharedPreferences sharedPref = getSharedPreferences(
                             getString(R.string.preference_file_key), Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
@@ -319,7 +296,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             }
 
         }.execute(null, null, null);
-
     }
 
 
@@ -389,10 +365,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (item.getItemId() == R.id.action_settings) {
             return true;
         }
 
@@ -406,7 +380,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         } else if (v == googleSignin) {
             mGoogleApiClient.connect();
-            signOutFromGplus(); //cleanup
+            signOutFromGplus(); //cleanup call
 
             if (mGoogleApiClient.isConnected()) {
                 signInWithGplus();
@@ -423,33 +397,29 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 error = true;
             }
 
-
             if(!error) {
                 usernameField.clearError();
                 passwordField.clearError();
-                Log.d("Debug", "Logging in");
                 doSOSLogin("SOS", usernameField.getText().toString(), passwordField.getText().toString());
             }
 
         } else if (v == signupBtn) {
-            startActivity(new Intent(this, SignupActivity.class)); //TODO retrieve newly created account if success from signup.
+            startActivity(new Intent(this, SignupActivity.class));
 
         } else if (v == forgotLoginBtn) {
             startActivity(new Intent(this, ForgotLoginActivity.class));
         }
 
-
     }
 
 
-    public void doFacebookLogin() {//TODO Glitchy, needs work. Duplicate emails present a problem.
+    public void doFacebookLogin() {//TODO Needs adjusting serverside, Duplicate emails present a problem.
         loginManager.logInWithReadPermissions(this, Arrays.asList("public_profile", "email"));
     }
 
     public void doFacebookLogout() {
         loginManager.logOut();
     }
-
 
     @Override
     public void onConnected(Bundle arg0) {
@@ -459,23 +429,18 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             Person currentPerson = Plus.PeopleApi
                     .getCurrentPerson(mGoogleApiClient);
 
-            //System.out.println("getImage: " + );
             userImageUrl = currentPerson.getImage().getUrl().replace("sz=50", "sz=200");
             String firstName = currentPerson.getName().getGivenName();
             String lastName = currentPerson.getName().getFamilyName();
             String userId = currentPerson.getId();
             String email = Plus.AccountApi.getAccountName(mGoogleApiClient);
 
-            //System.out.println("cover photo: "+currentPerson.getCover().getCoverPhoto().getUrl());
-
             createSOSUser("google", firstName, lastName, userId, email);
-
 
         } else {
             Toast.makeText(getApplicationContext(),
                     "Person information is null", Toast.LENGTH_LONG).show();
         }
-
 
     }
 
@@ -483,7 +448,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     public void onConnectionSuspended(int arg0) {
         mGoogleApiClient.connect();
     }
-
 
     public void onConnectionFailed(ConnectionResult result) {
         if (!result.hasResolution()) {
@@ -498,11 +462,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             resolveSignInError();
 
         }
-
     }
 
     private void signInWithGplus() {
-
         if (!mGoogleApiClient.isConnecting()) {
             resolveSignInError();
         }
@@ -513,7 +475,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             Plus.AccountApi.clearDefaultAccount(mGoogleApiClient);
             mGoogleApiClient.disconnect();
             mGoogleApiClient.connect();
-            //prompt.setText("Logged out");
         }
     }
 
@@ -536,15 +497,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private void createSOSUser(final String provider, String firstName, String lastName,
                                final String password, final String email) {
 
-
         String deviceId = "";
         if (regid != null)
             deviceId = regid;
-
-        //Need firstName, lastName, password (userId)
-        //Need email, deviceId
-
-        System.out.println("userImageUrl: "+userImageUrl);
 
         List<NameValuePair> params = new LinkedList<NameValuePair>();
         params.add(new BasicNameValuePair("firstName", firstName));
@@ -554,23 +509,18 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         params.add(new BasicNameValuePair("image", userImageUrl));
         params.add(new BasicNameValuePair("deviceId", deviceId));
 
-
         String paramString = URLEncodedUtils.format(params, "utf-8");//.replace("+", "%20");
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/createUser?"+paramString;
-
-        //System.out.println("createUser URL: "+url);
 
         JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                //System.out.println("Response: " + response.toString());
                 try {
 
                     //If success = 1, result = success string
                     //If success = 0, result = error string
                     if (response.getString("success").equalsIgnoreCase("1")) {
-                        //System.out.println("Successful create");
                     } else {
                         if (response.getString("result").substring(0, response.getString("result").indexOf(" ")).equalsIgnoreCase("Duplicate")) {
                             isLogging = false;
@@ -578,7 +528,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                     }
 
                     doSOSLogin(provider, email, password);
-
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -594,20 +543,25 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         });
 
-
         Singleton.getInstance().addToRequestQueue(jsonObjReq);
-
 
     }
 
 
+    /**
+     * Volley call to check users credentials against the server.
+     * Depending on result, continue or halt user. On success close this activity and transfer user to
+     * MainActivity, else prompt incorrect login
+     * @param provider String - SOS, Facebook, or Google
+     * @param email String - FB required a separate call to get this info
+     * @param password String - unencrypted
+     */
     private void doSOSLogin(final String provider, String email, String password) {
 
         String url = "http://54.200.33.91:8080/com.mysql.services/rest/serviceclass/doLogin?" +
                 "email=" + email +
                 "&password=" + Validations.get_SHA_1_SecurePassword(password);
 
-        System.out.println("Login url: " + url);
         JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET, url,
                 (JSONObject) null, new Response.Listener<JSONObject>() {
             @Override
@@ -616,7 +570,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 try {
 
                     if (response.getString("success").equalsIgnoreCase("1") && response.getInt("expectResults") >= 1){
-                        System.out.println("Login success Response: " + response.toString());
                         SharedPreferences sharedPref = getSharedPreferences(
                                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedPref.edit();
@@ -631,7 +584,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         editor.putString("provider", provider);
                         editor.putInt("distance", 10);
                         editor.commit();
-
 
                         Intent mainActivity = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(mainActivity);

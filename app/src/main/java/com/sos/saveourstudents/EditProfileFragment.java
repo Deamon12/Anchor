@@ -16,7 +16,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -80,8 +79,8 @@ public class EditProfileFragment extends Fragment {
         return fragment;
     }
 
+    // Required empty public constructor
     public EditProfileFragment() {
-        // Required empty public constructor
     }
 
     @Override
@@ -106,7 +105,6 @@ public class EditProfileFragment extends Fragment {
         return rootView;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
     public void onDoneButton() {
         if (mListener != null) {
             mListener.onDoneButton();
@@ -134,9 +132,7 @@ public class EditProfileFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-
         initializeMemberVariables();
-
         initializeEditTextWithEnterExit(mEditFirstName, mEditFirstNameInput);
         initializeEditTextWithEnterExit(mEditLastName, mEditLastNameInput);
         initializeEditTextWithEnterExit(mEditSchool, mEditSchoolInput);
@@ -147,8 +143,6 @@ public class EditProfileFragment extends Fragment {
         doneButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                InputMethodManager in = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-//                in.hideSoftInputFromWindow(getView().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
                 onDoneButton();
             }
         });
@@ -156,7 +150,6 @@ public class EditProfileFragment extends Fragment {
 
 
     public interface OnDoneButtonListener {
-        // TODO: Update argument type and name
         public void onDoneButton();
     }
 
@@ -178,7 +171,6 @@ public class EditProfileFragment extends Fragment {
         mEditMajorInput.setText(mCurrStudent.getMajor());
         mEditDescriptionInput.setText(mCurrStudent.getDescription());
 
-        //mProfileImage = (ImageView) getActivity().findViewById(R.id.profile_editImage);
         mProfileImage.setImageDrawable(mCurrStudent.getProfilePicture().getDrawable());
         mProfilePictureUrl = mCurrStudent.getProfilePictureUrl();
 
@@ -284,6 +276,8 @@ public class EditProfileFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
+                //TODO REMOVE THIS SHIT LIBRARY
+                /*
                 MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity())
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
@@ -315,7 +309,7 @@ public class EditProfileFragment extends Fragment {
                         .negativeText("Cancel")
                         .neutralText("Use Default")
                         .show();
-
+                */
 
             }
 
@@ -323,12 +317,14 @@ public class EditProfileFragment extends Fragment {
     }
 
 
+    /**
+     * LRU query
+     * @param imageUrl String url
+     * @param imageView View to show retrieved image
+     */
     private void getUserImage(final String imageUrl, final ImageView imageView) {
 
-
         ImageLoader imageLoader = Singleton.getInstance().getImageLoader();
-
-
         imageLoader.get(imageUrl, new ImageLoader.ImageListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
@@ -349,9 +345,11 @@ public class EditProfileFragment extends Fragment {
     }
 
 
+    /**
+     * Save profile changes to local data
+     */
     private void updateSharedPrefs() {
 
-        System.out.println("Updating shared prefs");
         SharedPreferences sharedPref = getActivity().getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();

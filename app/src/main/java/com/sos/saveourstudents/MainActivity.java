@@ -27,6 +27,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.rey.material.widget.FloatingActionButton;
 import com.rey.material.widget.SnackBar;
 import com.sos.saveourstudents.supportclasses.NavDrawerAdapter;
 import com.sos.saveourstudents.supportclasses.RecyclerItemClickListener;
@@ -44,6 +45,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Initial Activity that houses the viewpager for Feed and Map fragment.
+ * This activity should be uncoupled from its child fragments
+ */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private final int SETTINGS_ACTIVITY = 363;
@@ -56,13 +61,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private SlidingTabLayout mTabs;
 
     private ViewPagerAdapter viewPagerAdapter;
-    private RecyclerView mRecyclerView;                           // Declaring RecyclerView
-    private RecyclerView.Adapter mAdapter;                        // Declaring Adapter For Recycler View
-    private DrawerLayout mDrawer;                                 // Declaring DrawerLayout
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private DrawerLayout mDrawer;
 
     private ActionBarDrawerToggle mDrawerToggle;
-
-    private com.rey.material.widget.FloatingActionButton fab;
+    private FloatingActionButton fab;
 
     private SnackBar mSnackBar;
 
@@ -86,7 +90,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         sharedPref = getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-        if(!sharedPref.contains("first_name")){//Your not logged in. Go to login activity
+        //Your not logged in. Go back to login activity
+        if(!sharedPref.contains("first_name")){
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
@@ -98,10 +103,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         fabBroadcastReciever = new FabBroadcastReciever();
-
-
         mSnackBar = (SnackBar)findViewById(R.id.main_sn);
-
         mSnackBar.applyStyle(R.style.SnackBarSingleLine)
                 .text("Connection timed out")
                 .actionText("RETRY")
@@ -114,9 +116,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
 
 
+        //Start build FAB flow
         buildFab();
-
-
 
 
         mViewPager = (ViewPager) this.findViewById(R.id.pager);
@@ -124,9 +125,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mViewPager.setAdapter(viewPagerAdapter);
         mTabs = (SlidingTabLayout) this.findViewById(R.id.tabs);
         mTabs.setDistributeEvenly(true);
-
         mTabs.setViewPager(mViewPager);
-
         mTabs.setCustomTabColorizer(new SlidingTabLayout.TabColorizer() {
             @Override
             public int getIndicatorColor(int position) {
@@ -135,11 +134,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.RecyclerView); // Assigning the RecyclerView Object to the xml View
-
-        mRecyclerView.setHasFixedSize(true);                            // Letting the system know we wont change the size of the list
-
-        updateNavDrawer();
+        //RecyclerView for Nav Drawer
+        mRecyclerView = (RecyclerView) findViewById(R.id.RecyclerView);
+        mRecyclerView.setHasFixedSize(true);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.addOnItemTouchListener(
@@ -183,26 +180,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         };
         mDrawer.setDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
-
+        updateNavDrawer();
 
     }
 
+    /**
+     * Initialize Receiver on activity resume
+     */
     @Override
     protected void onResume() {
-        //Custom BC listener, if user gets removed or accepted to group
+        //Custom Broadcast listener, if user gets removed or accepted to group
         IntentFilter iff = new IntentFilter();
         iff.addAction("com.sos.saveourstudents.CUSTOM_INTENT");
         registerReceiver(fabBroadcastReciever, iff);
         super.onResume();
     }
 
+    /**
+     * Remove Receiver and close nav drawer on activity pause
+     */
     @Override
     protected void onPause() {
         super.onPause();
-
         if(mDrawer != null)
             mDrawer.closeDrawers();
-
         unregisterReceiver(fabBroadcastReciever);
 
     }

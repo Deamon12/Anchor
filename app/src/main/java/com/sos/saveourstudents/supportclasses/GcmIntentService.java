@@ -14,7 +14,7 @@ import com.sos.saveourstudents.MemberWantsToJoinActivity;
 import com.sos.saveourstudents.R;
 
 /**
- * Created by deamon on 4/30/15.
+ * Initiates broadcast of notifications from Google Cloud Messenger pushes
  */
 public class GcmIntentService extends IntentService {
     private final String ADD_MEMBER = "1", ADD_TUTOR = "2", ACCEPT_USER = "3", DELETE_USER = "4";
@@ -50,9 +50,6 @@ public class GcmIntentService extends IntentService {
             else{
                 message = "Have fun using SaveOurStudents app!";
             }
-
-            //System.out.println("messageType: "+messageType);
-            System.out.println("Extras: " + extras);
 
 
             if (GoogleCloudMessaging.MESSAGE_TYPE_SEND_ERROR.equals(messageType)) {
@@ -106,8 +103,6 @@ public class GcmIntentService extends IntentService {
                                 .bigText(msg))
                         .setTicker(message)
                                 .addExtras(extras)
-                        //.setStyle(new Notification.BigPictureStyle()
-                                        //        .bigPicture(aBigBitmap))
                         .setContentText(msg);
 
         mBuilder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS | Notification.DEFAULT_VIBRATE);
