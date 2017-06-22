@@ -15,7 +15,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -139,6 +138,9 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
     public void onClick(View v) {
 
         if (v == emailButton) {
+
+            //TODO STUPID LIBRARY
+            /*
             new MaterialDialog.Builder(this)
                     .title("Change Email")
                     .input("Email", sharedPref.getString("email", ""), new MaterialDialog.InputCallback() {
@@ -154,7 +156,7 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                     })
                     .negativeText("Cancel")
                     .show();
-
+*/
         }
         else if (v == passwordButton) {
             showEditPasswordDialog();
@@ -166,6 +168,8 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
      */
     private void showEditPasswordDialog() {
 
+        //TODO STUPID LIBRARY
+        /*
         MaterialDialog.Builder builder = new MaterialDialog.Builder(this)
                 .callback(new MaterialDialog.ButtonCallback() {
                     @Override
@@ -187,6 +191,7 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                 .negativeText("Cancel")
                 .customView(R.layout.layout_dialog_custom, false)
                 .show();
+          */
 
     }
 

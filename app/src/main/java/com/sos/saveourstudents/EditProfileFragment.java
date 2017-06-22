@@ -16,7 +16,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -277,6 +276,8 @@ public class EditProfileFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
+                //TODO REMOVE THIS SHIT LIBRARY
+                /*
                 MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity())
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
@@ -308,7 +309,7 @@ public class EditProfileFragment extends Fragment {
                         .negativeText("Cancel")
                         .neutralText("Use Default")
                         .show();
-
+                */
 
             }
 
